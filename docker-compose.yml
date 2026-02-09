@@ -1,0 +1,36 @@
+services:
+  db:
+    image: mariadb:11.4
+    container_name: PICADE_DB
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: ROOT_PICADE_USER_ADMIN
+      MARIADB_DATABASE: PICADE
+      MARIADB_USER: PICADE_USER_ADMIN
+      MARIADB_PASSWORD: 080226PICADE
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./docker/mariadb/init:/docker-entrypoint-initdb.d
+      #- ./docker/mariadb/csv:/var/lib/mysql-files:ro  # Añadimos :ro (solo lectura) para mayor estabilidad
+
+      #- db_data:/var/lib/mysql
+      #- ./docker/mariadb/init:/docker-entrypoint-initdb.d
+      - ./docker/mariadb/csv:/var/lib/mysql-files  # <--- AQUÍ ES DONDE VA
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: PICADE_APP
+    volumes:
+      - .:/var/www
+    ports:
+      - "8000:8000"
+      - "5173:5173"
+    depends_on:
+      - db
+
+volumes:
+  db_data:  # <-- Solo el nombre aquí
