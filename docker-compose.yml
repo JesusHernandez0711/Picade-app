@@ -20,10 +20,11 @@ services:
       - ./docker/mariadb/csv:/var/lib/mysql-files  # <--- AQUÍ ES DONDE VA
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: PICADE_APP
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+   image: jesus0711/picade-app:Dev_Picade_v1.0
+   container_name: PICADE_APP
     volumes:
       - .:/var/www
     ports:
