@@ -1,3 +1,28 @@
+# Sistema de Información para la Administración y Seguimiento de los Programas PICADE y Cero Tolerancia en Pemex 🛢️
+
+Este sistema ha sido desarrollado para centralizar la gestión y el seguimiento operativo de los programas **PICADE** (Programa de Integridad, Control y Administración de Datos Estratégicos) y **Cero Tolerancia**. La solución está construida sobre una arquitectura robusta, moderna y totalmente dockerizada.
+
+---
+
+## 🛠️ Stack Tecnológico
+* **Framework:** [Laravel 12](https://laravel.com)
+* **Backend:** PHP 8.2
+* **Base de Datos:** MariaDB (Dockerizada)
+* **Frontend:** Vue 3 & Bootstrap 5
+* **Contenedores:** Docker & Docker Compose
+
+---
+
+## 🚀 Guía de Instalación para Colaboradores
+
+Para clonar el proyecto y tener el entorno operativo (incluyendo base de datos, procedimientos y carga masiva), sigue estos pasos:
+
+### 1. Clonar el repositorio
+```bash
+git clone [https://github.com/JesusHernandez0711/Picade-app.git](https://github.com/JesusHernandez0711/Picade-app.git)
+cd Picade-app
+
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
