@@ -16,7 +16,8 @@ services:
       - ./docker/mariadb/csv:/var/lib/mysql-files
 
   app:
-    image: jesus0711/picade-app:Dev_Picade_v1.0
+    image: jesus0711/picade-app:Dev_Picade_v1.1
+    build: .   # <--- ¡AGREGA ESTO! (Truco pro para el futuro)
     container_name: PICADE_APP
     volumes:
       - .:/var/www
