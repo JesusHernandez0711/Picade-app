@@ -9,7 +9,7 @@ INTO TABLE `Pais`
 CHARACTER SET utf8mb4
 FIELDS TERMINATED BY ';'
 OPTIONALLY ENCLOSED BY '"'
-LINES TERMINATED BY '\r\n'
+LINES TERMINATED BY '\n'
 IGNORE 1 ROWS
 (`Codigo`,
 @Var_Nombre)
@@ -31,7 +31,7 @@ INTO TABLE `Estado`
 CHARACTER SET utf8mb4
 FIELDS TERMINATED BY ';'
 OPTIONALLY ENCLOSED BY '"'
-LINES TERMINATED BY '\r\n'
+LINES TERMINATED BY '\n'
 IGNORE 1 ROWS
 (`Codigo`, 
 @Var_Nombre,
@@ -57,7 +57,7 @@ INTO TABLE `Municipio`
 CHARACTER SET utf8mb4
 FIELDS TERMINATED BY ';'
 OPTIONALLY ENCLOSED BY '"'
-LINES TERMINATED BY '\r\n'
+LINES TERMINATED BY '\n'
 IGNORE 1 ROWS
 (`Codigo`,
 @Var_Nombre,
@@ -84,7 +84,7 @@ INTO TABLE `Cat_Centros_Trabajo`
 CHARACTER SET utf8mb4
 FIELDS TERMINATED BY ';'
 OPTIONALLY ENCLOSED BY '"'
-LINES TERMINATED BY '\r\n'
+LINES TERMINATED BY '\n'
 IGNORE 1 ROWS
 (
 @Var_Codigo,
@@ -115,7 +115,7 @@ INTO TABLE `Cat_Departamentos`
 CHARACTER SET utf8mb4
 FIELDS TERMINATED BY ';'
 OPTIONALLY ENCLOSED BY '"'
-LINES TERMINATED BY '\r\n'
+LINES TERMINATED BY '\n'
 IGNORE 1 ROWS
 (`Codigo`,
 @Var_Nombre,
@@ -144,7 +144,7 @@ INTO TABLE `Cat_Direcciones`
 CHARACTER SET latin1
 FIELDS TERMINATED BY ';'
 OPTIONALLY ENCLOSED BY '"'
-LINES TERMINATED BY '\r\n'
+LINES TERMINATED BY '\n'
 IGNORE 1 ROWS
 (@Var_Clave,
 @Var_Nombre)
@@ -170,7 +170,7 @@ INTO TABLE `Cat_Subdirecciones`
 CHARACTER SET latin1
 FIELDS TERMINATED BY ';'
 OPTIONALLY ENCLOSED BY '"'
-LINES TERMINATED BY '\r\n'
+LINES TERMINATED BY '\n'
 IGNORE 1 ROWS
 (`Fk_Id_CatDirecc`, 
 @Var_Clave,
@@ -199,7 +199,7 @@ INTO TABLE `Cat_Gerencias_Activos`
 CHARACTER SET latin1
 FIELDS TERMINATED BY ';'
 OPTIONALLY ENCLOSED BY '"'
-LINES TERMINATED BY '\r\n'
+LINES TERMINATED BY '\n'
 IGNORE 1 ROWS
 (`Fk_Id_CatSubDirec`,
 @Var_Clave,
@@ -226,7 +226,7 @@ INTO TABLE `Cat_Regimenes_Trabajo`
 CHARACTER SET utf8mb4
 FIELDS TERMINATED BY ';'
 OPTIONALLY ENCLOSED BY '"'
-LINES TERMINATED BY '\r\n'
+LINES TERMINATED BY '\n'
 IGNORE 1 ROWS
 (
 @Var_Codigo,
@@ -256,7 +256,7 @@ INTO TABLE `Cat_Regiones_Trabajo`
 CHARACTER SET utf8mb4
 FIELDS TERMINATED BY ';'
 OPTIONALLY ENCLOSED BY '"'
-LINES TERMINATED BY '\r\n'
+LINES TERMINATED BY '\n'
 IGNORE 1 ROWS
 (
 @Var_Codigo,
@@ -283,7 +283,7 @@ INTO TABLE `Cat_Puestos_Trabajo`
 CHARACTER SET utf8mb4
 FIELDS TERMINATED BY ';'
 OPTIONALLY ENCLOSED BY '"'
-LINES TERMINATED BY '\r\n'
+LINES TERMINATED BY '\n'
 IGNORE 1 ROWS
 (
 @Var_Codigo,
@@ -313,7 +313,7 @@ INTO TABLE `Info_Personal`
 CHARACTER SET utf8mb4
 FIELDS TERMINATED BY ';'
 OPTIONALLY ENCLOSED BY '"'
-LINES TERMINATED BY '\r\n'
+LINES TERMINATED BY '\n'
 IGNORE 1 ROWS
 (@Var_Nombre,
 @Var_Apellido_Paterno,
@@ -380,7 +380,7 @@ INTO TABLE `Cat_Roles`
 CHARACTER SET utf8mb4
 FIELDS TERMINATED BY ';'
 OPTIONALLY ENCLOSED BY '"'
-LINES TERMINATED BY '\r\n'
+LINES TERMINATED BY '\n'
 IGNORE 1 ROWS
 (
 @Var_Codigo,
@@ -410,7 +410,7 @@ INTO TABLE `Usuarios`
 CHARACTER SET utf8mb4
 FIELDS TERMINATED BY ';'
 OPTIONALLY ENCLOSED BY '"'
-LINES TERMINATED BY '\r\n'
+LINES TERMINATED BY '\n'
 IGNORE 1 ROWS
 (`Ficha`,
 `Email`,
@@ -437,7 +437,7 @@ INTO TABLE `Cat_Estatus_Capacitacion`
 CHARACTER SET utf8mb4
 FIELDS TERMINATED BY ';'
 OPTIONALLY ENCLOSED BY '"'
-LINES TERMINATED BY '\r\n'
+LINES TERMINATED BY '\n'
 IGNORE 1 ROWS
 (
 @Var_Codigo,
@@ -470,7 +470,7 @@ INTO TABLE `Cat_Modalidad_Capacitacion`
 CHARACTER SET utf8mb4
 FIELDS TERMINATED BY ';'
 OPTIONALLY ENCLOSED BY '"'
-LINES TERMINATED BY '\r\n'
+LINES TERMINATED BY '\n'
 IGNORE 1 ROWS
 (@Var_Codigo,
 @Var_Nombre,      -- Leemos en variable temporal
@@ -495,7 +495,7 @@ INTO TABLE `Cat_Cases_Sedes`
 CHARACTER SET utf8mb4
 FIELDS TERMINATED BY ';'
 OPTIONALLY ENCLOSED BY '"'
-LINES TERMINATED BY '\r\n'
+LINES TERMINATED BY '\n'
 IGNORE 1 ROWS
 (
   @Var_Codigo,
@@ -551,7 +551,7 @@ INTO TABLE `Cat_Tipos_Instruccion_Cap`
 CHARACTER SET utf8mb4
 FIELDS TERMINATED BY ';'
 OPTIONALLY ENCLOSED BY '"'
-LINES TERMINATED BY '\r\n'
+LINES TERMINATED BY '\n'
 IGNORE 1 ROWS
 (@Var_Nombre,      -- Leemos en variable temporal
 @Var_Descripcion  -- Leemos en variable temporal
@@ -578,7 +578,7 @@ INTO TABLE `Cat_Temas_Capacitacion`
 CHARACTER SET utf8mb4
 FIELDS TERMINATED BY ';'
 OPTIONALLY ENCLOSED BY '"'
-LINES TERMINATED BY '\r\n'
+LINES TERMINATED BY '\n'
 IGNORE 1 ROWS
 (@Var_Codigo,
 @Var_Nombre,      -- Leemos en variable temporal
@@ -614,7 +614,7 @@ INTO TABLE `Cat_Estatus_Participante`
 CHARACTER SET utf8mb4           -- Para que reconozca acentos y ñ
 FIELDS TERMINATED BY ';'        -- Las columnas se separan por coma
 OPTIONALLY ENCLOSED BY '"'      -- Por si algún texto tiene comillas
-LINES TERMINATED BY '\r\n'      -- Salto de línea (en Windows suele ser \r\n)
+LINES TERMINATED BY '\n'      -- Salto de línea (en Windows suele ser \r\n)
 IGNORE 1 ROWS                   -- Saltamos la primera fila (los encabezados)
 (@Var_Codigo,
 @Var_Nombre,      -- Leemos en variable temporal
