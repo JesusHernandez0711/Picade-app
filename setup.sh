@@ -8,6 +8,10 @@ docker compose up -d
 
 sudo docker exec -it PICADE_APP composer install
 
+sudo docker exec -it PICADE_APP npm install
+
+docker exec -u root PICADE_DB chmod -R 777 /var/lib/mysql-files/
+
 echo "Creacion de base de datos:"
 sudo docker exec -it PICADE_DB mariadb -u root -pROOT_PICADE_USER_ADMIN -e "DROP DATABASE IF EXISTS PICADE; CREATE DATABASE PICADE;"
 
@@ -17,6 +21,7 @@ echo "📦 Cargando archivos de datos..."
 sudo docker exec -it PICADE_DB ls /var/lib/mysql-files/
 
 docker cp ./docker/mariadb/csv/. PICADE_DB:/var/lib/mysql-files/
+
 docker exec -u root PICADE_DB chmod -R 777 /var/lib/mysql-files/
 
 #docker cp ~/Proyectos/Picade-app/docker/mariadb/csv/. PICADE_DB:/var/lib/mysql-files/
@@ -26,9 +31,6 @@ docker exec -u root PICADE_DB chmod -R 777 /var/lib/mysql-files/
 # 3. Migraciones de Laravel
 echo "🏗️ Ejecutando migraciones de Laravel..."
 
-sudo docker exec -it PICADE_APP composer install
-
-sudo docker exec -it PICADE_APP npm install
 
 sudo docker exec -it PICADE_APP php artisan config:clear
 
