@@ -40,6 +40,10 @@ class UsuarioController extends Controller
          listarInstructoresActivos()   → SP_ListarInstructoresActivos
          listarInstructoresHistorial() → SP_ListarTodosInstructores_Historial
 
+       CASCADAS AJAX (Dropdowns dependientes):
+         ⮕ MIGRADO A CatalogoController (reutilizable por todos los módulos).
+         Ver: App\Http\Controllers\CatalogoController
+
        PATRÓN DE MANEJO DE ERRORES:
        ────────────────────────────
        Todos los SPs lanzan SIGNAL SQLSTATE '45000' con códigos personalizados:
@@ -72,17 +76,6 @@ class UsuarioController extends Controller
 
     /**
      * LISTADO GENERAL DE USUARIOS (TABLA CRUD ADMIN)
-     * ═══════════════════════════════════════════════
-     * SP UTILIZADO: Ninguno — Usa la Vista SQL "Vista_Usuarios"
-     *
-     * ¿POR QUÉ UNA VISTA Y NO UN SP?
-     *   La Vista_Usuarios ya tiene el INNER JOIN de Usuarios + Info_Personal + Cat_Roles
-     *   optimizado a nivel de índices. Para un listado paginado, Laravel necesita un
-     *   Query Builder (para ->paginate()), y las Vistas SQL se consultan como tablas normales.
-     *   Un SP retorna un resultset que no es paginable nativamente por Laravel.
-     *
-     * NOTA: En un futuro, si se necesitan filtros complejos (por Región, Gerencia, etc.),
-     *       se puede crear un SP específico para listados con parámetros de búsqueda.
      */
     public function index()
     {
@@ -95,13 +88,6 @@ class UsuarioController extends Controller
 
     /**
      * FORMULARIO DE ALTA ADMINISTRATIVA
-     * ══════════════════════════════════
-     * SP UTILIZADO: Ninguno — Solo renderiza la vista con los catálogos para los dropdowns.
-     *
-     * ¿POR QUÉ CARGAR CATÁLOGOS AQUÍ?
-     *   El formulario de alta administrativa requiere TODOS los dropdowns
-     *   (Régimen, Puesto, CT, Depto, Región, Gerencia, Rol) pre-cargados.
-     *   Los catálogos se filtran por Activo=1 para que solo aparezcan opciones válidas.
      */
     public function create()
     {
@@ -112,25 +98,7 @@ class UsuarioController extends Controller
 
     /**
      * REGISTRAR USUARIO POR ADMIN (ALTA ADMINISTRATIVA)
-     * ══════════════════════════════════════════════════
      * SP UTILIZADO: SP_RegistrarUsuarioPorAdmin (20 parámetros)
-     *
-     * FLUJO:
-     * 1. CAPA LARAVEL: Valida formato (campos obligatorios, tipos, longitudes).
-     * 2. Laravel hashea la contraseña con Bcrypt.
-     * 3. CAPA SP: Ejecuta SP_RegistrarUsuarioPorAdmin que valida:
-     *    - Auditoría (¿Quién lo está creando?)
-     *    - Vigencia de catálogos (¿El Puesto/Depto/CT sigue activo?)
-     *    - Anti-duplicados (Ficha, Email, Huella Humana)
-     *    - Integridad atómica (INSERT en 2 tablas o ROLLBACK)
-     * 4. Si todo pasa → redirect con éxito.
-     * 5. Si falla SP → atrapa SIGNAL, parsea código, manda alerta al front.
-     *
-     * DIFERENCIA VS REGISTRO PÚBLICO:
-     *   - Aquí TODOS los campos de adscripción son OBLIGATORIOS.
-     *   - Se asigna un Rol específico (no default 4=Participante).
-     *   - Se registra quién creó al usuario (Auditoría con _Id_Admin_Ejecutor).
-     *   - Se puede subir foto de perfil al momento del alta.
      */
     public function store(Request $request)
     {
@@ -197,6 +165,7 @@ class UsuarioController extends Controller
                 $request->id_gerencia,               // _Id_Gerencia
                 $request->nivel,                     // _Nivel
                 $request->clasificacion,             // _Clasificacion
+                $request->foto_perfil,               // _Url_Foto
             ]);
 
             return redirect()->route('usuarios.index')
@@ -212,16 +181,7 @@ class UsuarioController extends Controller
 
     /**
      * VER DETALLE DE USUARIO (MODAL / VISTA DE AUDITORÍA)
-     * ════════════════════════════════════════════════════
      * SP UTILIZADO: SP_ConsultarUsuarioPorAdmin
-     *
-     * Retorna la "Radiografía Técnica Completa" del usuario:
-     *   - Identidad, Credenciales, Foto
-     *   - Datos Personales completos
-     *   - Adscripción con IDs de cascada (País→Estado→Municipio→CT)
-     *   - Jerarquía organizacional (Dirección→Subdirección→Gerencia)
-     *   - Auditoría (Quién creó, quién modificó, cuándo)
-     *   - Seguridad (Rol, Estatus Activo/Inactivo)
      */
     public function show(string $id)
     {
@@ -246,16 +206,7 @@ class UsuarioController extends Controller
 
     /**
      * FORMULARIO DE EDICIÓN (ADMIN)
-     * ═════════════════════════════
      * SP UTILIZADO: SP_ConsultarUsuarioPorAdmin (para pre-llenar el formulario)
-     *
-     * FLUJO:
-     * 1. Llama al SP para obtener los datos actuales del usuario.
-     * 2. Carga todos los catálogos activos para los dropdowns.
-     * 3. Manda ambos a la vista para el "Data Binding" automático.
-     *
-     * Los IDs de cascada (Id_Pais_CT, Id_Estado_CT, Id_Municipio_CT) permiten
-     * que los selectores dependientes se pre-carguen correctamente en el front.
      */
     public function edit(string $id)
     {
@@ -283,22 +234,7 @@ class UsuarioController extends Controller
 
     /**
      * ACTUALIZAR USUARIO POR ADMIN
-     * ════════════════════════════
      * SP UTILIZADO: SP_EditarUsuarioPorAdmin (21 parámetros)
-     *
-     * CARACTERÍSTICAS EXCLUSIVAS DEL ADMIN:
-     *   - Puede cambiar Email (el usuario normal no puede desde su perfil).
-     *   - Puede cambiar Rol (escalar/degradar privilegios).
-     *   - Puede resetear Contraseña sin conocer la anterior.
-     *   - Puede modificar TODOS los campos de adscripción.
-     *
-     * CONTRASEÑA CONDICIONAL:
-     *   Si el campo 'nueva_password' viene vacío → el SP preserva la contraseña actual.
-     *   Si tiene valor → se hashea con Bcrypt y se envía al SP para sobrescribir.
-     *
-     * IDEMPOTENCIA:
-     *   El SP tiene un "Motor de Detección de Cambios" que compara campo por campo.
-     *   Si no hay cambios reales, retorna 'SIN_CAMBIOS' sin tocar disco.
      */
     public function update(Request $request, string $id)
     {
@@ -324,9 +260,6 @@ class UsuarioController extends Controller
             'foto_perfil'       => ['nullable', 'string', 'max:255'],
         ]);
 
-        /* Contraseña Condicional:
-           Si el admin escribió una nueva contraseña → hasheamos.
-           Si dejó el campo vacío → mandamos NULL al SP (COALESCE preservará la actual). */
         $passwordHasheado = $request->filled('nueva_password')
             ? Hash::make($request->nueva_password)
             : null;
@@ -347,16 +280,16 @@ class UsuarioController extends Controller
                 $passwordHasheado,                   // _Nueva_Contrasena (NULL si no cambió)
                 $request->id_rol,                    // _Id_Rol
                 $request->id_regimen,                // _Id_Regimen
-                $request->id_puesto ?? 0,            // _Id_Puesto (0 si no seleccionó → SP lo convierte a NULL)
+                $request->id_puesto ?? 0,            // _Id_Puesto (0 → SP convierte a NULL)
                 $request->id_centro_trabajo ?? 0,    // _Id_CentroTrabajo
                 $request->id_departamento ?? 0,      // _Id_Departamento
                 $request->id_region,                 // _Id_Region
                 $request->id_gerencia ?? 0,          // _Id_Gerencia
                 $request->nivel,                     // _Nivel
                 $request->clasificacion,             // _Clasificacion
+                $request->foto_perfil,               // _Url_Foto
             ]);
 
-            /* Determinar tipo de éxito según la Accion retornada por el SP */
             $accion = $resultado[0]->Accion ?? 'ACTUALIZADA';
             $mensaje = $resultado[0]->Mensaje ?? 'Usuario actualizado.';
 
@@ -378,27 +311,15 @@ class UsuarioController extends Controller
 
     /**
      * ELIMINAR USUARIO DEFINITIVAMENTE (HARD DELETE)
-     * ══════════════════════════════════════════════
      * SP UTILIZADO: SP_EliminarUsuarioDefinitivamente
-     *
      * ⚠️  ACCIÓN IRREVERSIBLE — SOLO PARA CORRECCIÓN DE ERRORES INMEDIATOS.
-     *
-     * ANÁLISIS FORENSE PREVIO (ejecutado por el SP):
-     *   1. Anti-Suicidio: El admin no puede eliminarse a sí mismo.
-     *   2. Huella de Instructor: Si tiene cursos asignados (pasados o futuros) → BLOQUEO.
-     *   3. Huella Académica: Si tiene registros como participante → BLOQUEO.
-     *   4. Si está limpio → DELETE en Usuarios + Info_Personal (cascada manual).
-     *
-     * NOTA LEGAL:
-     *   Para gestionar bajas laborales (despido, renuncia, jubilación) se debe usar
-     *   SP_CambiarEstatusUsuario (baja lógica), NUNCA este método.
      */
     public function destroy(string $id)
     {
         try {
             $resultado = DB::select('CALL SP_EliminarUsuarioDefinitivamente(?, ?)', [
-                Auth::id(),  // _Id_Admin_Ejecutor
-                $id,         // _Id_Usuario_Objetivo
+                Auth::id(),
+                $id,
             ]);
 
             $mensaje = $resultado[0]->Mensaje ?? 'Usuario eliminado.';
@@ -424,14 +345,7 @@ class UsuarioController extends Controller
 
     /**
      * VER MI PERFIL
-     * ═════════════
      * SP UTILIZADO: SP_ConsultarPerfilPropio
-     *
-     * Retorna el expediente del usuario autenticado con estrategia "Lean Payload":
-     *   - Solo IDs de catálogos (el front ya tiene los textos en sus dropdowns).
-     *   - IDs de cascada geográfica (País→Estado→Municipio→CT/Depto).
-     *   - IDs de cascada organizacional (Dirección→Subdirección→Gerencia).
-     *   - LEFT JOINs para robustez (datos visibles aunque haya catálogos rotos).
      */
     public function perfil()
     {
@@ -459,19 +373,7 @@ class UsuarioController extends Controller
 
     /**
      * ACTUALIZAR MI PERFIL
-     * ════════════════════
      * SP UTILIZADO: SP_EditarPerfilPropio (16 parámetros)
-     *
-     * RESTRICCIONES VS EDICIÓN ADMIN:
-     *   - El usuario NO puede cambiar su Email aquí (se delega a actualizarCredenciales).
-     *   - El usuario NO puede cambiar su Rol (solo el Admin puede escalar privilegios).
-     *   - Régimen y Región son OBLIGATORIOS; Puesto, CT, Depto, Gerencia son OPCIONALES.
-     *
-     * PROTECCIONES DEL SP:
-     *   - Bloqueo pesimista (FOR UPDATE) contra edición concurrente.
-     *   - Detección de cambios (idempotencia): si no cambió nada → 'SIN_CAMBIOS'.
-     *   - Anti-colisión de Ficha: si cambió la Ficha, verifica que no exista en otro usuario.
-     *   - Anti-zombie: valida vigencia de todos los catálogos seleccionados.
      */
     public function actualizarPerfil(Request $request)
     {
@@ -497,22 +399,22 @@ class UsuarioController extends Controller
         /* CAPA 2: LLAMADA AL STORED PROCEDURE */
         try {
             $resultado = DB::select('CALL SP_EditarPerfilPropio(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-                Auth::id(),                          // _Id_Usuario_Sesion
-                $request->ficha,                     // _Ficha
-                $request->foto_perfil,               // _Url_Foto
-                $request->nombre,                    // _Nombre
-                $request->apellido_paterno,          // _Apellido_Paterno
-                $request->apellido_materno,          // _Apellido_Materno
-                $request->fecha_nacimiento,          // _Fecha_Nacimiento
-                $request->fecha_ingreso,             // _Fecha_Ingreso
-                $request->id_regimen,                // _Id_Regimen
-                $request->id_puesto ?? 0,            // _Id_Puesto (0 → SP convierte a NULL)
-                $request->id_centro_trabajo ?? 0,    // _Id_CentroTrabajo
-                $request->id_departamento ?? 0,      // _Id_Departamento
-                $request->id_region,                 // _Id_Region
-                $request->id_gerencia ?? 0,          // _Id_Gerencia
-                $request->nivel,                     // _Nivel
-                $request->clasificacion,             // _Clasificacion
+                Auth::id(),
+                $request->ficha,
+                $request->foto_perfil,
+                $request->nombre,
+                $request->apellido_paterno,
+                $request->apellido_materno,
+                $request->fecha_nacimiento,
+                $request->fecha_ingreso,
+                $request->id_regimen,
+                $request->id_puesto ?? 0,
+                $request->id_centro_trabajo ?? 0,
+                $request->id_departamento ?? 0,
+                $request->id_region,
+                $request->id_gerencia ?? 0,
+                $request->nivel,
+                $request->clasificacion,
             ]);
 
             $accion = $resultado[0]->Accion ?? 'ACTUALIZADA';
@@ -533,24 +435,10 @@ class UsuarioController extends Controller
 
     /**
      * ACTUALIZAR MIS CREDENCIALES (EMAIL Y/O CONTRASEÑA)
-     * ══════════════════════════════════════════════════
      * SP UTILIZADO: SP_ActualizarCredencialesPropio
      *
-     * FLUJO DE SEGURIDAD:
-     *   1. El usuario escribe su CONTRASEÑA ACTUAL como verificación de identidad.
-     *   2. Laravel verifica Hash::check(actual vs BD) ANTES de llamar al SP.
-     *   3. Si pasa → se manda el nuevo Email y/o nueva Contraseña (hasheada) al SP.
-     *   4. El SP valida unicidad de Email, detecta cambios, y persiste.
-     *
-     * ¿POR QUÉ LA VERIFICACIÓN ES EN LARAVEL Y NO EN EL SP?
-     *   Porque el SP recibe el hash de la contraseña, no el texto plano.
-     *   La comparación bcrypt (Hash::check) solo puede hacerla PHP con la librería password_verify.
-     *   MariaDB no tiene una función nativa para comparar hashes bcrypt.
-     *
-     * FLEXIBILIDAD:
-     *   - Solo Email nuevo → se actualiza Email, Contraseña se preserva.
-     *   - Solo Contraseña nueva → se actualiza Contraseña, Email se preserva.
-     *   - Ambos → se actualizan ambos.
+     * FLUJO: Verificar password actual en Laravel (Hash::check) → luego llamar SP.
+     * MariaDB no puede comparar hashes bcrypt, por eso la verificación es en PHP.
      */
     public function actualizarCredenciales(Request $request)
     {
@@ -571,9 +459,7 @@ class UsuarioController extends Controller
             return back()->with('danger', 'Debe proporcionar al menos un dato para actualizar (Email o Contraseña).');
         }
 
-        /* VERIFICACIÓN DE IDENTIDAD:
-           Comparamos la contraseña actual escrita por el usuario contra el hash en BD.
-           Esto es OBLIGATORIO antes de permitir cualquier cambio de seguridad. */
+        /* VERIFICACIÓN DE IDENTIDAD */
         $usuario = Auth::user();
 
         if (!Hash::check($request->password_actual, $usuario->getAuthPassword())) {
@@ -582,18 +468,15 @@ class UsuarioController extends Controller
             ]);
         }
 
-        /* Preparar datos para el SP:
-           Si hay nueva contraseña → hashearla.
-           Si no → mandar NULL (el SP la preservará con COALESCE). */
         $nuevoEmailLimpio = $request->filled('nuevo_email') ? $request->nuevo_email : null;
         $nuevaPassHasheada = $request->filled('nueva_password') ? Hash::make($request->nueva_password) : null;
 
         /* CAPA 2: LLAMADA AL STORED PROCEDURE */
         try {
             $resultado = DB::select('CALL SP_ActualizarCredencialesPropio(?, ?, ?)', [
-                Auth::id(),           // _Id_Usuario_Sesion
-                $nuevoEmailLimpio,    // _Nuevo_Email (NULL si no cambió)
-                $nuevaPassHasheada,   // _Nueva_Contrasena (NULL si no cambió)
+                Auth::id(),
+                $nuevoEmailLimpio,
+                $nuevaPassHasheada,
             ]);
 
             $accion = $resultado[0]->Accion ?? 'ACTUALIZADA';
@@ -620,19 +503,7 @@ class UsuarioController extends Controller
 
     /**
      * ACTIVAR / DESACTIVAR USUARIO (BAJA LÓGICA)
-     * ═══════════════════════════════════════════
      * SP UTILIZADO: SP_CambiarEstatusUsuario
-     *
-     * PROTECCIONES DEL SP:
-     *   - Anti-Lockout: El admin no puede desactivar su propia cuenta.
-     *   - Candado Operativo Dinámico: Si el usuario es INSTRUCTOR de un curso activo → BLOQUEO.
-     *   - Candado Académico: Si el usuario es PARTICIPANTE inscrito en un curso activo → BLOQUEO.
-     *   - Sincronización en cascada: Desactiva/activa AMBAS tablas (Usuarios + Info_Personal).
-     *   - Idempotencia: Si ya tiene el estatus solicitado → 'SIN_CAMBIOS'.
-     *
-     * CUÁNDO USAR ESTO VS ELIMINAR:
-     *   - CambiarEstatus → Despidos, renuncias, jubilaciones, suspensiones temporales.
-     *   - EliminarDefinitivamente → SOLO errores de captura inmediatos (usuario duplicado).
      */
     public function cambiarEstatus(Request $request, string $id)
     {
@@ -642,9 +513,9 @@ class UsuarioController extends Controller
 
         try {
             $resultado = DB::select('CALL SP_CambiarEstatusUsuario(?, ?, ?)', [
-                Auth::id(),                  // _Id_Admin_Ejecutor
-                $id,                         // _Id_Usuario_Objetivo
-                $request->nuevo_estatus,     // _Nuevo_Estatus (1=Activar, 0=Desactivar)
+                Auth::id(),
+                $id,
+                $request->nuevo_estatus,
             ]);
 
             $accion = $resultado[0]->Accion ?? '';
@@ -664,64 +535,10 @@ class UsuarioController extends Controller
         }
     }
 
-    /* ========================================================================================
-       ████████████████████████████████████████████████████████████████████████████████████████
-       SECCIÓN 4: LISTADOS PARA DROPDOWNS Y REPORTES
-       ████████████████████████████████████████████████████████████████████████████████████████
-       ======================================================================================== */
-
-    /**
-     * LISTAR INSTRUCTORES ACTIVOS (PARA DROPDOWNS DE ASIGNACIÓN)
-     * ═════════════════════════════════════════════════════════
-     * SP UTILIZADO: SP_ListarInstructoresActivos
-     *
-     * CONSUMIDO POR: Formularios de Coordinación (asignar instructor a un curso).
-     * FILTROS: Solo usuarios Activos + Roles 1 (Admin), 2 (Coord), 3 (Instructor).
-     * FORMATO: [{Id_Usuario, Ficha, Nombre_Completo}]
-     * RETORNA: JSON para consumo de componentes Vue.js (Select2/Dropdown).
-     */
-    public function listarInstructoresActivos()
-    {
-        try {
-            $instructores = DB::select('CALL SP_ListarInstructoresActivos()');
-
-            return response()->json($instructores);
-
-        } catch (\Illuminate\Database\QueryException $e) {
-            return response()->json([
-                'error' => 'Error al cargar la lista de instructores.'
-            ], 500);
-        }
-    }
-
-    /**
-     * LISTAR TODOS LOS INSTRUCTORES (HISTORIAL COMPLETO)
-     * ══════════════════════════════════════════════════
-     * SP UTILIZADO: SP_ListarTodosInstructores_Historial
-     *
-     * CONSUMIDO POR: Filtros de reportes y dashboards históricos.
-     * FILTROS: Roles 1, 2, 3 (SIN filtro de Activo → incluye bajas).
-     * ENRIQUECIMIENTO: Los inactivos llevan sufijo " (BAJA/INACTIVO)".
-     * FORMATO: [{Id_Usuario, Ficha, Nombre_Completo_Filtro}]
-     * RETORNA: JSON para consumo de componentes Vue.js.
-     */
-    public function listarInstructoresHistorial()
-    {
-        try {
-            $instructores = DB::select('CALL SP_ListarTodosInstructores_Historial()');
-
-            return response()->json($instructores);
-
-        } catch (\Illuminate\Database\QueryException $e) {
-            return response()->json([
-                'error' => 'Error al cargar el historial de instructores.'
-            ], 500);
-        }
-    }
 
     /* ========================================================================================
        ████████████████████████████████████████████████████████████████████████████████████████
-       SECCIÓN 5: MÉTODOS PRIVADOS (UTILIDADES INTERNAS)
+       SECCIÓN 4: MÉTODOS PRIVADOS (UTILIDADES INTERNAS)
        ████████████████████████████████████████████████████████████████████████████████████████
        ======================================================================================== */
 
@@ -731,43 +548,52 @@ class UsuarioController extends Controller
      * Se usa en: create(), edit(), perfil()
      *
      * ESTRATEGIA:
-     *   Cada catálogo se consulta con Activo=1 y se ordena alfabéticamente.
-     *   Se retorna como un array asociativo para que la vista Blade pueda iterar cada uno
-     *   en su respectivo dropdown: @foreach($catalogos['roles'] as $rol) ...
+     *   Cada catálogo se consulta mediante su SP de Dropdown dedicado (SP_Listar*Activos).
+     *   Los SPs ya aplican filtro Activo=1, ordenamiento alfabético, y proyección mínima
+     *   (Id + Codigo/Clave + Nombre). No se duplica lógica en Laravel.
+     *
+     * CARGA INICIAL vs CASCADA:
+     *   Los catálogos aquí son "Entidades Raíz" o independientes que se cargan al abrir el form.
+     *   Los catálogos dependientes (Estados, Municipios, Subdirecciones, Gerencias) se cargan
+     *   por AJAX vía CatalogoController cuando el usuario selecciona un padre.
+     *
+     * CONTRATOS DE RETORNO DE CADA SP:
+     *   roles           → [{Id_Rol, Codigo, Nombre}]
+     *   regimenes       → [{Id_CatRegimen, Codigo, Nombre}]
+     *   regiones        → [{Id_CatRegion, Codigo, Nombre}]
+     *   puestos         → [{Id_CatPuesto, Codigo, Nombre}]
+     *   centros_trabajo → [{Id_CatCT, Codigo, Nombre}]
+     *   departamentos   → [{Id_CatDep, Codigo, Nombre}]  (con candado de Municipio padre activo)
+     *   paises          → [{Id_Pais, Codigo, Nombre}]     ← RAÍZ de cascada geográfica
+     *   direcciones     → [{Id_CatDirecc, Clave, Nombre}] ← RAÍZ de cascada organizacional
      *
      * @return array  Array asociativo con las colecciones de cada catálogo.
      */
     private function cargarCatalogos(): array
     {
         return [
-            'roles'            => DB::table('Cat_Roles')
-                                    ->where('Activo', 1)->orderBy('Nombre')->get(),
-            'regimenes'        => DB::table('Cat_Regimenes_Trabajo')
-                                    ->where('Activo', 1)->orderBy('Nombre')->get(),
-            'puestos'          => DB::table('Cat_Puestos_Trabajo')
-                                    ->where('Activo', 1)->orderBy('Nombre')->get(),
-            'centros_trabajo'  => DB::table('Cat_Centros_Trabajo')
-                                    ->where('Activo', 1)->orderBy('Nombre')->get(),
-            'departamentos'    => DB::table('Cat_Departamentos')
-                                    ->where('Activo', 1)->orderBy('Nombre')->get(),
-            'regiones'         => DB::table('Cat_Regiones_Trabajo')
-                                    ->where('Activo', 1)->orderBy('Nombre')->get(),
-            'gerencias'        => DB::table('Cat_Gerencias_Activos')
-                                    ->where('Activo', 1)->orderBy('Nombre')->get(),
+            // ═══ SEGURIDAD ═══
+            'roles'            => DB::select('CALL SP_ListarRolesActivos()'),
+
+            // ═══ ADSCRIPCIÓN (Entidades independientes, sin cascada) ═══
+            'regimenes'        => DB::select('CALL SP_ListarRegimenesActivos()'),
+            'regiones'         => DB::select('CALL SP_ListarRegionesActivas()'),
+            'puestos'          => DB::select('CALL SP_ListarPuestosActivos()'),
+            'centros_trabajo'  => DB::select('CALL SP_ListarCTActivos()'),
+            'departamentos'    => DB::select('CALL SP_ListarDepActivos()'),
+
+            // ═══ CASCADA GEOGRÁFICA (Solo nivel raíz) ═══
+            // Hijos: CatalogoController::estadosPorPais() → municipiosPorEstado() [AJAX]
+            'paises'           => DB::select('CALL SP_ListarPaisesActivos()'),
+
+            // ═══ CASCADA ORGANIZACIONAL (Solo nivel raíz) ═══
+            // Hijos: CatalogoController::subdireccionesPorDireccion() → gerenciasPorSubdireccion() [AJAX]
+            'direcciones'      => DB::select('CALL SP_ListarDireccionesActivas()'),
         ];
     }
 
     /**
      * Extrae el mensaje limpio del SIGNAL del Stored Procedure.
-     *
-     * PROBLEMA:
-     *   Laravel envuelve el error SQL en capas de texto:
-     *   "SQLSTATE[45000]: <<1644>>: 7 CONFLICTO [409-A]: La Ficha ya está registrada y activa..."
-     *
-     * SOLUCIÓN:
-     *   Buscamos el patrón de nuestros códigos de error personalizados.
-     *   Si lo encontramos, extraemos desde ahí.
-     *   Si no, retornamos un mensaje genérico amigable.
      *
      * @param  string  $mensajeCompleto  El mensaje crudo de la excepción de Laravel.
      * @return string  El mensaje limpio del SP listo para mostrar al usuario.
@@ -784,15 +610,6 @@ class UsuarioController extends Controller
     /**
      * Clasifica el tipo de alerta Bootstrap según el código de error del SP.
      *
-     * MAPEO DE CÓDIGOS → ALERTAS BOOTSTRAP:
-     *   [409-A] → 'warning'  (amarilla): Duplicado activo, hay acción sugerida.
-     *   [409-B] → 'danger'   (roja):     Cuenta bloqueada, requiere admin.
-     *   [409]   → 'warning'  (amarilla): Conflicto operativo o concurrencia.
-     *   [403]   → 'danger'   (roja):     Permisos/Seguridad denegada.
-     *   [400]   → 'danger'   (roja):     Error de validación.
-     *   [404]   → 'danger'   (roja):     No encontrado.
-     *   Otro    → 'danger'   (roja):     Error inesperado.
-     *
      * @param  string  $mensaje  Mensaje limpio del SP.
      * @return string  Tipo de alerta Bootstrap ('warning', 'danger', 'info').
      */
@@ -806,22 +623,18 @@ class UsuarioController extends Controller
             return 'danger';
         }
 
-        /* Conflictos operativos (cursos activos, concurrencia) → Warning */
         if (str_contains($mensaje, 'CONFLICTO OPERATIVO') || str_contains($mensaje, 'CONCURRENCIA')) {
             return 'warning';
         }
 
-        /* Bloqueos de integridad (historial instructor/participante) → Danger */
         if (str_contains($mensaje, 'BLOQUEO')) {
             return 'danger';
         }
 
-        /* Acciones denegadas (anti-lockout, anti-suicidio) → Danger */
         if (str_contains($mensaje, 'DENEGADA')) {
             return 'danger';
         }
 
-        /* 409 genérico → Warning */
         if (str_contains($mensaje, '409')) {
             return 'warning';
         }
