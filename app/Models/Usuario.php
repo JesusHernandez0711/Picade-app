@@ -4,8 +4,15 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class Usuario extends Authenticatable
+// 2. Importar el Trait Notifiable
+use Illuminate\Notifications\Notifiable;
+
+use Illuminate\Contracts\Auth\MustVerifyEmail; // 1. IMPORTAR ESTO
+
+// 2. AGREGAR 'implements MustVerifyEmail'
+class Usuario extends Authenticatable implements MustVerifyEmail
 {
+    use Notifiable; // ⬅️ 2. CRÍTICO: Esto activa el método notify(). Si falta, falla.
     /**
      * Tabla real en la BD.
      * (Laravel buscaría 'usuarios' por convención)
@@ -53,5 +60,23 @@ class Usuario extends Authenticatable
     public function getAuthPassword()
     {
         return $this->Contraseña;
+    }
+
+    /**
+     * [NUEVO] Mapeo para Reset Password:
+     * Laravel busca el email en la propiedad ->email (minúscula).
+     * Aquí le decimos que use la columna 'Email' (Mayúscula).
+     */
+    public function getEmailForPasswordReset()
+    {
+        return $this->Email;
+    }
+
+    /**
+     * [NUEVO] Para que las notificaciones de correo sepan a qué columna enviar.
+     */
+    public function routeNotificationForMail($notification)
+    {
+        return $this->Email;
     }
 }

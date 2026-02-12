@@ -468,6 +468,10 @@ CREATE TABLE IF NOT EXISTS `PICADE`.`Usuarios` (
   `Fk_Usuario_Updated_By` INT NULL,
   `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP(),
   `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP(),
+  -- 👇 AGREGA ESTA COLUMNA (Es tipo TIMESTAMP y acepta NULL)
+  `email_verified_at` TIMESTAMP NULL DEFAULT NULL,  
+  -- 👇 AQUÍ ESTÁ LA LÍNEA MÁGICA. AL SER 'NULL', NO ROMPE EL CSV NI LOS SPs.
+  `remember_token` VARCHAR(255) NULL,
   PRIMARY KEY (`Id_Usuario`),
     /* Restricciones */
 	-- BLINDAJE 1: La ficha (ej: '316211') no puede repetirse en toda la tabla

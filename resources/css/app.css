@@ -1,11 +1,44 @@
+/**
+ * ══════════════════════════════════════════════════════════════════════════
+ * PICADE — CSS PRINCIPAL (Tailwind v4)
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ * UBICACIÓN: resources/css/app.css
+ *
+ * En Tailwind v4 la configuración va aquí, no en tailwind.config.js.
+ * El bloque @theme define las variables CSS que Tailwind consume
+ * para generar las clases utilitarias.
+ * ══════════════════════════════════════════════════════════════════════════
+ */
+
 @import 'tailwindcss';
+@import './components/glassmorphism.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
 @source '../**/*.js';
+@source '../**/*.vue';
 
+/* ══════════════════════════════════════════════════════════════════════════
+   TEMA: Paleta Gobierno de México 2026 + Tipografía
+   ══════════════════════════════════════════════════════════════════════════
+   Genera clases como:  bg-gob-guinda, text-gob-verde, border-gob-dorado,
+                         font-montserrat, font-noto
+   ══════════════════════════════════════════════════════════════════════════ */
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    /* ── TIPOGRAFÍAS ── */
+    --font-montserrat: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+    --font-noto: 'Noto Sans', ui-sans-serif, system-ui, sans-serif;
+
+    /* ── PALETA GOBIERNO DE MÉXICO 2026 ──
+       CMYK oficiales entre paréntesis para referencia */
+    --color-gob-negro:     #161a1d;  /* (77/68/63/76) Textos principales, fondos oscuros   */
+    --color-gob-guinda:    #9b2247;  /* (29/98/59/18) Color insignia del gobierno           */
+    --color-gob-verde:     #1e5b4f;  /* (83/39/65/37) Acento institucional verde            */
+    --color-gob-dorado:    #a57f2c;  /* (32/46/100/10) Acentos, highlights, links           */
+    --color-gob-gris:      #98989A;  /* (43/35/34/01) Textos secundarios, bordes            */
+    --color-gob-guinda-dk: #611232;  /* (42/96/56/48) Hover de guinda, énfasis              */
+    --color-gob-verde-dk:  #002f2a;  /* (87/51/67/68) Hover de verde, overlays              */
+    --color-gob-crema:     #e6d194;  /* (10/14/48/0)  Backgrounds claros, badges            */
 }

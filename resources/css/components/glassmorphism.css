@@ -1,0 +1,41 @@
+/**
+ * ══════════════════════════════════════════════════════════════════════════
+ * COMPONENTE CSS: Glassmorphism + Animaciones de Auth
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ * USADO EN: auth/login.blade.php, auth/register.blade.php
+ *
+ * IMPORTAR DESDE: resources/css/app.css
+ *   @import './components/glassmorphism.css';
+ * ══════════════════════════════════════════════════════════════════════════
+ */
+
+/* ── TARJETA GLASSMORPHISM ── */
+.glass-card {
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+}
+
+/* ── ANIMACIÓN DE ENTRADA (fade + slide up) ── */
+.card-enter {
+    animation: cardSlideIn 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+}
+
+@keyframes cardSlideIn {
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ── TÍTULO GRADIENTE (Guinda → Guinda Dark) ── */
+.text-gradient-guinda {
+    background: linear-gradient(135deg, #9b2247 0%, #611232 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}

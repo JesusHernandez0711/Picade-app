@@ -1,0 +1,296 @@
+/**
+ * ══════════════════════════════════════════════════════════════════════════
+ * PICADE — ESTILOS DE AUTENTICACIÓN
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ * UBICACIÓN: public/css/auth.css
+ * USADO EN:  auth/login.blade.php, auth/register.blade.php
+ *
+ * PALETA:    Identidad gráfica Gobierno de México 2024-2030
+ * DISEÑO:    Glassmorphism card + fondo con overlay institucional
+ * ══════════════════════════════════════════════════════════════════════════
+ */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   VARIABLES: Paleta Gobierno de México 2026
+   ══════════════════════════════════════════════════════════════════════════ */
+:root {
+    --gob-negro:     #161a1d;  /* CMYK 77/68/63/76 */
+    --gob-guinda:    #9b2247;  /* CMYK 29/98/59/18 */
+    --gob-verde:     #1e5b4f;  /* CMYK 83/39/65/37 */
+    --gob-dorado:    #a57f2c;  /* CMYK 32/46/100/10 */
+    --gob-gris:      #98989A;  /* CMYK 43/35/34/01 */
+    --gob-guinda-dk: #611232;  /* CMYK 42/96/56/48 */
+    --gob-verde-dk:  #002f2a;  /* CMYK 87/51/67/68 */
+    --gob-crema:     #e6d194;  /* CMYK 10/14/48/0  */
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   BASE
+   ══════════════════════════════════════════════════════════════════════════ */
+body {
+    font-family: 'Montserrat', sans-serif;
+    margin: 0;
+    overflow: hidden;
+    height: 100vh;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FONDO: Imagen + Overlay institucional
+   ══════════════════════════════════════════════════════════════════════════ */
+.bg-cover-wrapper {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+}
+.bg-cover-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.bg-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        135deg,
+        rgba(0, 47, 42, 0.70) 0%,
+        rgba(22, 26, 29, 0.50) 50%,
+        rgba(97, 18, 50, 0.60) 100%
+    );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CONTENEDOR CENTRADO
+   ══════════════════════════════════════════════════════════════════════════ */
+.login-wrapper {
+    position: relative;
+    z-index: 10;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   GLASSMORPHISM CARD
+   ══════════════════════════════════════════════════════════════════════════ */
+.glass-card {
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 1rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    max-width: 420px;
+    width: 100%;
+    padding: 2.5rem 2rem;
+}
+@media (min-width: 576px) {
+    .glass-card {
+        padding: 3rem 2.5rem;
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ANIMACIÓN DE ENTRADA
+   ══════════════════════════════════════════════════════════════════════════ */
+.card-enter {
+    animation: cardSlideIn 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+}
+@keyframes cardSlideIn {
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   TÍTULO GRADIENTE
+   ══════════════════════════════════════════════════════════════════════════ */
+.text-gradient-guinda {
+    background: linear-gradient(135deg, var(--gob-guinda) 0%, var(--gob-guinda-dk) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-align: center;
+    margin-bottom: 1.75rem;
+    user-select: none;
+}
+@media (min-width: 576px) {
+    .text-gradient-guinda {
+        font-size: 2.25rem;
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   INPUT GROUPS (Glassmorphism)
+   ══════════════════════════════════════════════════════════════════════════ */
+.input-glass {
+    background: rgba(255, 255, 255, 0.70);
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.input-glass:focus-within {
+    border-color: var(--gob-guinda);
+    box-shadow: 0 0 0 3px rgba(155, 34, 71, 0.12);
+}
+.input-glass .input-group-text {
+    background: transparent;
+    border: none;
+    color: #9ca3af;
+    font-size: 1.1rem;
+    min-height: 48px;
+    padding: 0 0.75rem;
+}
+.input-glass .form-control {
+    background: transparent;
+    border: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #1f2937;
+    box-shadow: none;
+    padding: 0.75rem;
+    align-self: stretch;
+    min-height: 48px;
+}
+.input-glass .form-control::placeholder {
+    color: #9ca3af;
+    font-weight: 400;
+}
+.input-glass .form-control:focus {
+    box-shadow: none;
+}
+.input-glass.is-invalid {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.10);
+}
+
+/* Eliminar border-radius internos del input-group */
+.input-glass .form-control,
+.input-glass .input-group-text,
+.input-glass .btn-toggle-pw {
+    border-radius: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   TOGGLE PASSWORD
+   ══════════════════════════════════════════════════════════════════════════ */
+.btn-toggle-pw {
+    background: transparent;
+    border: none;
+    color: #9ca3af;
+    padding: 0 0.75rem;
+    cursor: pointer;
+    transition: color 0.2s;
+    min-height: 48px;
+}
+.btn-toggle-pw:hover {
+    color: var(--gob-guinda);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CHECKBOX
+   ══════════════════════════════════════════════════════════════════════════ */
+.form-check-input:checked {
+    background-color: var(--gob-guinda);
+    border-color: var(--gob-guinda);
+}
+.form-check-input:focus {
+    box-shadow: 0 0 0 3px rgba(155, 34, 71, 0.20);
+    border-color: var(--gob-guinda);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LINK DORADO
+   ══════════════════════════════════════════════════════════════════════════ */
+.link-dorado {
+    color: var(--gob-dorado);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.link-dorado:hover {
+    color: var(--gob-guinda);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   BOTÓN GUINDA (Iniciar Sesión)
+   ══════════════════════════════════════════════════════════════════════════ */
+.btn-guinda {
+    background: linear-gradient(135deg, var(--gob-guinda), var(--gob-guinda-dk));
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    transition: all 0.2s;
+}
+.btn-guinda:hover {
+    background: linear-gradient(135deg, var(--gob-guinda-dk), var(--gob-guinda-dk));
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(155, 34, 71, 0.30);
+    color: #fff;
+}
+.btn-guinda:active {
+    transform: translateY(0);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   BOTÓN VERDE (Registrarse)
+   ══════════════════════════════════════════════════════════════════════════ */
+.btn-verde {
+    background: linear-gradient(135deg, var(--gob-verde), var(--gob-verde-dk));
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.btn-verde:hover {
+    background: linear-gradient(135deg, var(--gob-verde-dk), var(--gob-verde-dk));
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(30, 91, 79, 0.30);
+    color: #fff;
+}
+.btn-verde:active {
+    transform: translateY(0);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PIE INSTITUCIONAL
+   ══════════════════════════════════════════════════════════════════════════ */
+.footer-text {
+    text-align: center;
+    font-size: 0.6875rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    margin-top: 1.5rem;
+    user-select: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ERROR TEXT
+   ══════════════════════════════════════════════════════════════════════════ */
+.error-text {
+    font-size: 0.75rem;
+    color: #ef4444;
+    font-weight: 500;
+    margin-top: 0.375rem;
+}

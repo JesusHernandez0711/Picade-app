@@ -36,4 +36,9 @@ app.component('example-component', ExampleComponent);
  * scaffolding. Otherwise, you will need to add an element yourself.
  */
 
-app.mount('#app');
+const el = document.getElementById('app');
+if (el) {
+    app.mount(el);
+}
+
+import './components/password-toggle.js';
