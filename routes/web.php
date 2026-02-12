@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DashboardController; // ⬅️ 1. Importante: Importar el controlador
+use App\Http\Controllers\UsuarioController; // ⬅️ ¡AGREGA ESTO!
 
 //Route::get('/', function () {
 //    return view('welcome');
@@ -57,6 +58,12 @@ Route::get('/dashboard', function () {
 Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])
     ->name('dashboard');
 
+// ⬇️ [NUEVO] RUTA API PARA ACTUALIZACIÓN EN TIEMPO REAL (AJAX)
+// Esta es la ruta que llama el JavaScript cada 5 segundos para actualizar los números
+Route::get('/dashboard/data', [DashboardController::class, 'getDashboardData'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard.data');
+
 // 4. Ruta Home (Opcional, Laravel la trae por defecto, puedes dejarla o quitarla)
 //Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
@@ -69,3 +76,12 @@ Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'inde
 Route::get('/perfil', function () {
     return 'Perfil en construcción';
 })->middleware(['auth'])->name('perfil');
+
+/* --------------------------------------------------------------------------
+   MÓDULO DE ADMINISTRACIÓN (Rutas protegidas)
+   -------------------------------------------------------------------------- */
+
+// ⬇️ ESTA ES LA LÍNEA QUE TE FALTABA PARA ARREGLAR EL ERROR
+// Crea automáticamente: usuarios.index, usuarios.store, usuarios.edit, etc.
+Route::resource('usuarios', UsuarioController::class)
+    ->middleware(['auth', 'verified']);

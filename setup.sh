@@ -21,8 +21,8 @@ sudo docker compose down
 sudo docker compose build --no-cache
 sudo docker compose up -d
 
-echo "⏳ Esperando 10 segundos a que la Base de Datos arranque..."
-sleep 10
+echo "⏳ Esperando 30 segundos a que la Base de Datos arranque..."
+sleep 30
 
 # 3. Instalación de Dependencias
 echo "📦 Instalando dependencias (Composer y NPM)..."

@@ -8,176 +8,329 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        /* Estilos base del panel */
         :root {
             --picade-guinda: #731834;
-            --picade-dorado: #bfa15f;
-            --sidebar-width: 260px;
+            --picade-dark: #1e1e2d;
+            --sidebar-width: 256px;
+            --header-height: 64px;
         }
-        body { background-color: #f4f6f9; font-family: 'Nunito', sans-serif; }
-        
-        /* Sidebar */
+
+        body {
+            background-color: #ebedef; /* Color de fondo estilo CoreUI */
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* --- 1. SIDEBAR (Estilo CoreUI Dark) --- */
         .sidebar {
             width: var(--sidebar-width);
             height: 100vh;
             position: fixed;
             top: 0; left: 0;
-            background: #1e1e2d; /* Oscuro elegante */
-            color: #fff;
-            transition: all 0.3s;
-            z-index: 1000;
-        }
-        .sidebar-header { padding: 20px; background: rgba(0,0,0,0.1); border-bottom: 1px solid #2d2d3f; }
-        .nav-link { color: #c2c7d0; padding: 12px 20px; display: block; text-decoration: none; }
-        .nav-link:hover, .nav-link.active { background: var(--picade-guinda); color: #fff; }
-        .nav-link i { margin-right: 10px; width: 20px; text-align: center; }
-
-        /* Contenido Principal */
-        .main-content {
-            margin-left: var(--sidebar-width);
-            transition: all 0.3s;
-            min-height: 100vh;
-        }
-
-        /* Navbar Superior */
-        .top-navbar {
-            background: #fff;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            padding: 10px 20px;
+            background-color: var(--picade-dark);
+            color: rgba(255, 255, 255, 0.87);
+            transition: margin-left 0.3s;
+            z-index: 1030;
             display: flex;
+            flex-direction: column;
+        }
+
+        /* Clase para ocultar sidebar */
+        .sidebar.hide {
+            margin-left: calc(var(--sidebar-width) * -1);
+        }
+
+        .sidebar-header {
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+            padding: 0 1.5rem;
+            background-color: rgba(0, 0, 0, 0.2);
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.6);
+            padding: 0.8rem 1.5rem;
+            display: flex;
+            align-items: center;
+            transition: 0.2s;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #fff;
+            background-color: rgba(255,255,255,0.05);
+        }
+        .nav-link i { margin-right: 1rem; font-size: 1.2rem; }
+        
+        .nav-title {
+            margin-top: 1rem;
+            padding: 0.75rem 1.5rem;
+            font-size: 80%;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+        }
+
+        /* --- 2. CONTENIDO PRINCIPAL --- */
+        .wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            transition: margin-left 0.3s;
+            margin-left: var(--sidebar-width);
+        }
+        
+        /* Clase para expandir contenido cuando se oculta sidebar */
+        .wrapper.expand {
+            margin-left: 0;
+        }
+
+        /* --- 3. HEADER SUPERIOR (Blanco) --- */
+        .header {
+            height: var(--header-height);
+            background: #fff;
+            border-bottom: 1px solid #d8dbe0;
+            display: flex;
+            align-items: center;
+            padding: 0 1.5rem;
             justify-content: space-between;
+        }
+
+        /* Botón Hamburguesa */
+        .header-toggler {
+            border: 0;
+            background: transparent;
+            color: #768192;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+        .header-toggler:hover { color: var(--picade-guinda); }
+
+        /* Iconos Header */
+        .header-nav-icon {
+            font-size: 1.3rem;
+            color: #768192;
+            padding: 0.5rem;
+            position: relative;
+        }
+        
+        /* Dropdown Personalizado (Estilo Imagen) */
+        .custom-dropdown-menu {
+            width: 300px;
+            padding: 0;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .dropdown-header-label {
+            background: #f0f2f5;
+            padding: 8px 16px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            color: #768192;
+            border-bottom: 1px solid #e4e7eb;
+        }
+        .dropdown-item {
+            padding: 10px 16px;
+            color: #4f5d73;
+            border-bottom: 1px solid #ebedef;
+            display: flex;
             align-items: center;
         }
+        .dropdown-item:last-child { border-bottom: 0; }
+        .dropdown-item i { margin-right: 12px; font-size: 1.1rem; }
+        .dropdown-item:hover { background-color: #f7f7f9; color: #2c3e50; }
 
-        /* Offcanvas Catálogos */
-        .offcanvas-catalogs { background-color: #2c3e50; color: white; }
-        .catalog-item { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); display: block; color: #ecf0f1; text-decoration: none; }
-        .catalog-item:hover { background: rgba(255,255,255,0.05); color: var(--picade-dorado); }
+        /* Offcanvas Oscuro */
+        .offcanvas-catalogs { background-color: #212529; color: white; }
 
         /* Responsive */
-        @media (max-width: 768px) {
+        @media (max-width: 992px) {
             .sidebar { margin-left: calc(var(--sidebar-width) * -1); }
-            .sidebar.active { margin-left: 0; }
-            .main-content { margin-left: 0; }
+            .sidebar.show { margin-left: 0; }
+            .wrapper { margin-left: 0; }
         }
     </style>
 </head>
 <body>
 
-    <nav class="sidebar" id="sidebar">
-        <div class="sidebar-header d-flex align-items-center">
-            <i class="bi bi-cpu-fill fs-3 text-warning me-2"></i>
-            <span class="fw-bold fs-5">PICADE v2.0</span>
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <i class="bi bi-cpu-fill text-warning me-2 fs-4"></i>
+            <span>PICADE v2.0</span>
         </div>
-        
-        <div class="mt-3">
-            <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                <i class="bi bi-speedometer2"></i> Dashboard
-            </a>
+
+        <ul class="list-unstyled mb-0 pt-3">
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                    <i class="bi bi-speedometer2 text-info"></i> Dashboard
+                </a>
+            </li>
 
             @if(Auth::user()->Fk_Rol == 1)
-                <div class="text-uppercase small text-muted px-3 mt-3 mb-1">Administración</div>
-                <a href="#" class="nav-link"><i class="bi bi-people"></i> Usuarios</a>
-                
-                <a href="#" class="nav-link" data-bs-toggle="offcanvas" data-bs-target="#offcanvasCatalogs">
-                    <i class="bi bi-database-gear"></i> Catálogos (CRUDs)
-                </a>
+                <li class="nav-title">ADMINISTRACIÓN</li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('usuarios.*') ? 'active' : '' }}" href="{{ route('usuarios.index') }}">
+                        <i class="bi bi-people"></i> Usuarios
+                    </a>
+                </li>
+                <li class="nav-item">
+                    {{-- Botón que abre el Offcanvas derecho --}}
+                    <a class="nav-link" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasCatalogs">
+                        <i class="bi bi-database-gear text-warning"></i> Catálogos (CRUDs)
+                    </a>
+                </li>
             @endif
 
-            <div class="text-uppercase small text-muted px-3 mt-3 mb-1">Personal</div>
-            <a href="{{ route('perfil') }}" class="nav-link"><i class="bi bi-person-circle"></i> Mi Perfil</a>
-        </div>
-    </nav>
-
-    <div class="offcanvas offcanvas-end offcanvas-catalogs" tabindex="-1" id="offcanvasCatalogs" aria-labelledby="offcanvasCatalogsLabel">
-        <div class="offcanvas-header border-bottom border-secondary">
-            <h5 class="offcanvas-title" id="offcanvasCatalogsLabel">
-                <i class="bi bi-folder-fill text-warning me-2"></i> Administración de Sistema
-            </h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body p-0">
-            <div class="p-3 bg-dark bg-opacity-25 text-warning fw-bold small">CATÁLOGOS MAESTROS</div>
-            <a href="#" class="catalog-item"><i class="bi bi-building me-2"></i> Empresas / Gerencias</a>
-            <a href="#" class="catalog-item"><i class="bi bi-geo-alt me-2"></i> Centros de Trabajo</a>
-            <a href="#" class="catalog-item"><i class="bi bi-briefcase me-2"></i> Puestos</a>
-            
-            <div class="p-3 bg-dark bg-opacity-25 text-warning fw-bold small mt-2">DOCUMENTACIÓN</div>
-            <a href="#" class="catalog-item"><i class="bi bi-book me-2"></i> Manual de Usuario</a>
-            <a href="#" class="catalog-item"><i class="bi bi-code-slash me-2"></i> Manual Técnico</a>
+            <li class="nav-title">PERSONAL</li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('perfil') }}">
+                    <i class="bi bi-person-circle"></i> Mi Perfil
+                </a>
+            </li>
+        </ul>
+        
+        <div class="mt-auto p-3 border-top border-secondary">
+            <small class="text-muted d-block text-center">© 2026 PEMEX</small>
         </div>
     </div>
 
-    <div class="main-content">
-        <nav class="top-navbar">
-            <button class="btn btn-outline-secondary d-md-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
-            <h5 class="m-0 text-dark d-none d-md-block">@yield('header', 'Panel de Control')</h5>
+    <div class="wrapper" id="main-wrapper">
+        
+        <header class="header sticky-top">
+            <div class="d-flex align-items-center">
+                <button class="header-toggler" type="button" onclick="toggleSidebar()">
+                    <i class="bi bi-list"></i>
+                </button>
+                <span class="ms-3 fw-bold text-secondary d-none d-md-block">@yield('header')</span>
+            </div>
 
-            <div class="d-flex align-items-center gap-3">
-                <div class="dropdown">
-                    <a href="#" class="text-dark position-relative" data-bs-toggle="dropdown">
-                        <i class="bi bi-bell fs-5"></i>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
-                            3
-                        </span>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end shadow border-0">
-                        <li><h6 class="dropdown-header">Notificaciones</h6></li>
-                        <li><a class="dropdown-item small" href="#">Nuevo usuario registrado</a></li>
-                    </ul>
-                </div>
+            <div class="d-flex align-items-center">
+                
+                <a href="#" class="header-nav-icon me-3">
+                    <i class="bi bi-bell"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.5rem; top: 10px !important;">3</span>
+                </a>
+                
+                <a href="#" class="header-nav-icon me-3">
+                    <i class="bi bi-envelope"></i>
+                </a>
 
-                <a href="#" class="text-dark"><i class="bi bi-envelope fs-5"></i></a>
+                <div class="vr h-50 mx-2 text-secondary"></div>
 
-                <div class="dropdown">
-                    <a href="#" class="d-flex align-items-center text-dark text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
-                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center text-white me-2" style="width: 35px; height: 35px;">
-                            {{ substr(Auth::user()->Email, 0, 1) }}
+                <div class="dropdown ms-2">
+                    <a href="#" class="d-flex align-items-center text-decoration-none" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="rounded-circle bg-dark text-white d-flex justify-content-center align-items-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-person-fill fs-5"></i>
                         </div>
-                        <span class="d-none d-md-inline small fw-bold">{{ Auth::user()->Email }}</span>
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end shadow border-0">
-                        <li><a class="dropdown-item" href="{{ route('perfil') }}"><i class="bi bi-person me-2"></i> Mi Perfil</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-moon me-2"></i> Modo Oscuro</a></li>
-                        <li><hr class="dropdown-divider"></li>
+                    
+                    <ul class="dropdown-menu dropdown-menu-end custom-dropdown-menu shadow animate__animated animate__fadeIn">
+                        
+                        <li><div class="dropdown-header-label">Cuenta</div></li>
+                        <li>
+                            <a class="dropdown-item" href="#">
+                                <i class="bi bi-bell"></i> Notificaciones
+                                <span class="badge bg-danger ms-auto">42</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#">
+                                <i class="bi bi-envelope"></i> Mensajes
+                                <span class="badge bg-warning text-dark ms-auto">7</span>
+                            </a>
+                        </li>
+
+                        <li><div class="dropdown-header-label mt-2">Ajustes</div></li>
+                        <li>
+                            <a class="dropdown-item" href="{{ route('perfil') }}">
+                                <i class="bi bi-person"></i> Perfil
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#">
+                                <i class="bi bi-gear"></i> Ajustes
+                            </a>
+                        </li>
+                        
+                        <li><hr class="dropdown-divider my-0"></li>
+
                         <li>
                             <form action="{{ route('logout') }}" method="POST">
                                 @csrf
-                                <button type="submit" class="dropdown-item text-danger"><i class="bi bi-box-arrow-left me-2"></i> Cerrar Sesión</button>
+                                <button type="submit" class="dropdown-item text-danger py-3">
+                                    <i class="bi bi-box-arrow-left"></i> Cerrar sesión
+                                </button>
                             </form>
                         </li>
                     </ul>
                 </div>
             </div>
-        </nav>
+        </header>
 
         <div class="p-4">
             @if(session('success'))
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    {{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <i class="bi bi-check-circle-fill me-2"></i> {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @endif
 
             @yield('content')
         </div>
-        
-        <footer class="text-center py-3 text-muted small border-top bg-white">
-            &copy; 2026 PICADE. Todos los derechos reservados.
-        </footer>
+    </div>
+
+    <div class="offcanvas offcanvas-end offcanvas-catalogs" tabindex="-1" id="offcanvasCatalogs" aria-labelledby="offcanvasCatalogsLabel">
+        <div class="offcanvas-header border-bottom border-secondary">
+            <h5 class="offcanvas-title" id="offcanvasCatalogsLabel">
+                <i class="bi bi-database-gear text-warning me-2"></i> Panel Avanzado
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <p class="text-muted small">Herramientas de administración de base de datos.</p>
+            
+            <div class="list-group list-group-flush">
+                <a href="#" class="list-group-item list-group-item-action bg-dark text-light border-secondary">
+                    <i class="bi bi-building me-2 text-info"></i> Gerencias
+                </a>
+                <a href="#" class="list-group-item list-group-item-action bg-dark text-light border-secondary">
+                    <i class="bi bi-geo-alt me-2 text-info"></i> Centros de Trabajo
+                </a>
+                <a href="#" class="list-group-item list-group-item-action bg-dark text-light border-secondary">
+                    <i class="bi bi-briefcase me-2 text-info"></i> Puestos
+                </a>
+            </div>
+
+            <h6 class="mt-4 text-warning small fw-bold">MANUALES</h6>
+            <div class="list-group list-group-flush">
+                <a href="#" class="list-group-item list-group-item-action bg-dark text-light border-secondary">
+                    <i class="bi bi-book me-2"></i> Manual de Usuario
+                </a>
+                <a href="#" class="list-group-item list-group-item-action bg-dark text-light border-secondary">
+                    <i class="bi bi-code-slash me-2"></i> Manual Técnico
+                </a>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script>
-        // Toggle Sidebar Mobile
-        document.getElementById('sidebarToggle').addEventListener('click', function() {
-            document.getElementById('sidebar').classList.toggle('active');
-        });
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const wrapper = document.getElementById('main-wrapper');
+            
+            // Alternar clases
+            sidebar.classList.toggle('hide');
+            wrapper.classList.toggle('expand');
+        }
     </script>
+    
     @stack('scripts')
 </body>
 </html>

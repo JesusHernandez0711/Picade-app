@@ -98,7 +98,10 @@ class LoginController extends Controller
         $request->session()->regenerate();
 
         // 8. Redirigir según el rol del usuario autenticado
-        return redirect()->intended($this->rutaPorRol());
+        //return redirect()->intended($this->rutaPorRol());
+        // 8. REDIRECCIÓN MAESTRA (Aquí estaba tu error de sintaxis)
+        // Simplemente redirigimos a /dashboard. El DashboardController se encarga del resto.
+        return redirect()->intended('/dashboard');
     }
 
     /**
@@ -129,7 +132,7 @@ class LoginController extends Controller
      *
      * Usa match() de PHP 8 (equivalente a switch pero más limpio y seguro).
      */
-    private function rutaPorRol(): string
+    /**private function rutaPorRol(): string
     {
         $rol = Auth::user()->Fk_Rol;
 
@@ -139,5 +142,7 @@ class LoginController extends Controller
             3 => '/instructor/dashboard',
             default => '/dashboard',
         };
-    }
+    }**/
+
+        
 }

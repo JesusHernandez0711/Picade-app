@@ -84,6 +84,7 @@ VIEW `PICADE`.`Vista_Capacitaciones` AS
            ----------------------------------------------------------------------------------- */
         `Org`.`Clave_Gerencia`              AS `Clave_Gerencia_Solicitante`,
         
+        
         `Tem`.`Codigo_Tema`                 AS `Codigo_Tema`,
         `Tem`.`Nombre_Tema`                 AS `Nombre_Tema`,
         `Tem`.`Nombre_Tipo_Instruccion`     AS `Tipo_Instruccion`, -- Heredado de la vista de temas
