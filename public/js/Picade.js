@@ -40,8 +40,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 const bsAlert = bootstrap.Alert.getOrCreateInstance(alerta);
                 if (bsAlert) bsAlert.close();
                 if (alerta) alerta.remove();
-            }, 800);
-        }, 2000); // 10 segundos
+            }, 1000);
+        }, 3000); // 10 segundos
     });
 });
 
@@ -55,4 +55,59 @@ window.toggleSidebar = function() {
         sidebar.classList.toggle('hide');
         wrapper.classList.toggle('expand');
     }
+};
+
+/**
+ * █ MOTOR DE CASCADAS AJAX PICADE
+ * @param {string} url - Endpoint de la API (ej: '/catalogos/subdirecciones/')
+ * @param {string} targetId - ID del <select> que se va a llenar
+ * @param {string} childId - (Opcional) ID del <select> nieto que debe resetearse
+ * @param {string} idField - Nombre del campo ID en el JSON (ej: 'Id_CatSubDirec')
+ */
+window.setupCascade = function(url, targetId, childId = null, idField = 'id') {
+    const targetSelect = document.getElementById(targetId);
+    if (!targetSelect) return;
+
+    // 1. Limpiar el selector objetivo
+    targetSelect.innerHTML = '<option value="">Cargando...</option>';
+    targetSelect.disabled = true;
+
+    // 2. Si hay un nieto, resetearlo también
+    if (childId) {
+        const childSelect = document.getElementById(childId);
+        if (childSelect) {
+            childSelect.innerHTML = '<option value="">Esperando selección anterior...</option>';
+            childSelect.disabled = true;
+        }
+    }
+
+    // 3. Ejecutar petición al CatalogoController
+    fetch(url)
+        .then(response => {
+            if (!response.ok) throw new Error('Error en la red');
+            return response.json();
+        })
+        .then(data => {
+            targetSelect.innerHTML = '<option value="" selected disabled>Seleccionar...</option>';
+            
+            if (data.length === 0) {
+                targetSelect.innerHTML = '<option value="">Sin registros disponibles</option>';
+            } else {
+                data.forEach(item => {
+                    // Usamos Clave o Codigo dinámicamente según lo que venga en el JSON
+                    const identificador = item.Clave || item.Codigo || '';
+                    const optionText = identificador ? `[${identificador}] - ${item.Nombre}` : item.Nombre;
+                    
+                    const option = document.createElement('option');
+                    option.value = item[idField];
+                    option.innerHTML = optionText;
+                    targetSelect.appendChild(option);
+                });
+                targetSelect.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error PICADE Cascade:', error);
+            targetSelect.innerHTML = '<option value="">Error al cargar</option>';
+        });
 };

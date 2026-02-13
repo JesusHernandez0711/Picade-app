@@ -110,15 +110,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
        Estas rutas alimentan los <select> dependientes en los formularios.
        Ej: Al seleccionar un País, JS llama a /estados/{id} para llenar el siguiente combo.
        -------------------------------------------------------------------- */
+    /* --------------------------------------------------------------------
+       E. API INTERNA DE CATÁLOGOS (Cascadas AJAX)
+       --------------------------------------------------------------------
+       Estas rutas son consumidas por 'Picade.js' para llenar los selects.
+       El prefijo 'api/catalogos' asegura que no choquen con otras rutas.
+       -------------------------------------------------------------------- */
     Route::prefix('api/catalogos')->group(function () {
         
-        // --- Geografía ---
+        // 1. CASCADA GEOGRÁFICA
+        // JS llama a: /api/catalogos/estados/1
         Route::get('/estados/{idPais}', [CatalogoController::class, 'estadosPorPais']);
+        
+        // JS llama a: /api/catalogos/municipios/5
         Route::get('/municipios/{idEstado}', [CatalogoController::class, 'municipiosPorEstado']);
         
-        // --- Organización (PEMEX) ---
+        // 2. CASCADA ORGANIZACIONAL (PEMEX)
+        // JS llama a: /api/catalogos/subdirecciones/3
         Route::get('/subdirecciones/{idDireccion}', [CatalogoController::class, 'subdireccionesPorDireccion']);
+        
+        // JS llama a: /api/catalogos/gerencias/8
         Route::get('/gerencias/{idSubdireccion}', [CatalogoController::class, 'gerenciasPorSubdireccion']);
     });
-
 });

@@ -254,16 +254,6 @@ class UsuarioController extends Controller
      * @security Critical Path (Ruta Crítica de Seguridad)
      * @audit    Event ID: USER_CREATION
      *
-     * █ FLUJO DE EJECUCIÓN FORENSE:
-     * 1. [SANITIZACIÓN]: El Request es sometido a reglas de validación estrictas.
-     * 2. [ENCRIPTACIÓN]: La contraseña se convierte en un hash criptográfico.
-     * 3. [TRANSACCIÓN]: Se invoca `SP_RegistrarUsuarioPorAdmin`.
-     * - Valida integridad (No duplicados).
-     * - Inserta en `Info_Personal` (Datos Humanos).
-     * - Inserta en `Usuarios` (Datos de Acceso).
-     * - Registra la auditoría del creador.
-     * 4. [FEEDBACK]: Respuesta al usuario sobre el resultado de la operación.
-     *
      * @param Request $request Objeto con los datos capturados en el formulario.
      * @return \Illuminate\Http\RedirectResponse Redirección con mensaje de estado.
      */
@@ -272,25 +262,36 @@ class UsuarioController extends Controller
         // ─────────────────────────────────────────────────────────────────────
         // FASE 1: VALIDACIÓN DE INTEGRIDAD SINTÁCTICA (INPUT VALIDATION)
         // ─────────────────────────────────────────────────────────────────────
-        // Se definen reglas estrictas para cada campo. Si alguna regla falla,
-        // Laravel detiene la ejecución y retorna errores a la vista automáticamente.
+        // El método validate() actúa como un cortafuegos. Si algo falla aquí, 
+        // Laravel detiene el script y devuelve al usuario al formulario con errores.
         $request->validate([
-            // Identificadores Únicos
+            // [Identificadores Únicos]
+            // 'required': No puede estar vacío.
+            // 'max:50': Previene ataques de desbordamiento de búfer en BD.
             'ficha'             => ['required', 'string', 'max:50'],
+            
+            // [Activos Multimedia]
+            // 'image': Valida los "Magic Bytes" del archivo para asegurar que es una imagen real.
+            // 'mimes': Solo permite extensiones seguras (evita .php, .exe disfrazados).
             'foto_perfil'       => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+            
+            // [Credenciales]
             'email'             => ['required', 'string', 'email', 'max:255'],
             
-            // Seguridad (Password con confirmación obligatoria)
+            // [Seguridad]
+            // 'confirmed': Busca un campo 'password_confirmation' y verifica que sean idénticos.
             'password'          => ['required', 'string', 'min:8', 'confirmed'],
             
-            // Datos Personales
+            // [Datos Personales]
             'nombre'            => ['required', 'string', 'max:255'],
             'apellido_paterno'  => ['required', 'string', 'max:255'],
             'apellido_materno'  => ['required', 'string', 'max:255'],
             'fecha_nacimiento'  => ['required', 'date'],
             'fecha_ingreso'     => ['required', 'date'],
             
-            // Relaciones (Foreign Keys) - Deben ser enteros positivos
+            // [Relaciones (Foreign Keys)]
+            // 'integer': Evita inyección de strings en campos numéricos.
+            // 'min:1': Evita IDs inválidos (0 o negativos).
             'id_rol'            => ['required', 'integer', 'min:1'],
             'id_regimen'        => ['required', 'integer', 'min:1'],
             'id_puesto'         => ['required', 'integer', 'min:1'],
@@ -299,87 +300,109 @@ class UsuarioController extends Controller
             'id_region'         => ['required', 'integer', 'min:1'],
             'id_gerencia'       => ['required', 'integer', 'min:1'],
             
-            // Datos Opcionales (Nullable)
+            // [Metadatos Opcionales]
+            // 'nullable': Permite que el campo venga vacío o null.
             'nivel'             => ['nullable', 'string', 'max:50'],
-            'clasificacion'     => ['nullable', 'string', 'max:100'],            
-        ], [
-], [
-            'ficha.required' => 'La Ficha es obligatoria para la identificación corporativa.',
-            'email.email'    => 'El formato del correo electrónico es inválido.',
-            'password.min'   => 'La contraseña debe tener al menos 8 caracteres.',
-            'foto_perfil.image' => 'El archivo seleccionado debe ser una imagen válida.',
+            'clasificacion'     => ['nullable', 'string', 'max:100']
         ]);
 
-        // █ PROCESAMIENTO FÍSICO DE IMAGEN █
+        // ─────────────────────────────────────────────────────────────────────
+        // FASE 2: GESTIÓN DE ACTIVOS MULTIMEDIA (ASSET MANAGEMENT)
+        // ─────────────────────────────────────────────────────────────────────
+        
+        // Inicializamos la variable en NULL. Si el usuario no sube foto, se envía NULL a la BD.
         $rutaFoto = null;
+
+        // Verificamos si en la petición viene un archivo válido llamado 'foto_perfil'
         if ($request->hasFile('foto_perfil')) {
-            // Se almacena en storage/app/public/perfiles y se crea el link simbólico
+            
+            // Generamos un nombre único: TIMESTAMP + FICHA + EXTENSIÓN
+            // Ejemplo: 1715629900_598212.jpg
+            // Esto evita que si dos usuarios suben "foto.jpg", una sobrescriba a la otra.
             $filename = time() . '_' . $request->ficha . '.' . $request->file('foto_perfil')->getClientOriginalExtension();
+            
+            // Guardamos físicamente el archivo en 'storage/app/public/perfiles'
             $path = $request->file('foto_perfil')->storeAs('perfiles', $filename, 'public');
+            
+            // Generamos la ruta pública accesible para el navegador
             $rutaFoto = '/storage/' . $path;
         }
 
         // ─────────────────────────────────────────────────────────────────────
-        // FASE 2: EJECUCIÓN BLINDADA DE PROCEDIMIENTO ALMACENADO (DB TRANSACTION)
+        // FASE 3: EJECUCIÓN BLINDADA DE PROCEDIMIENTO ALMACENADO
         // ─────────────────────────────────────────────────────────────────────
         try {
-            // Invocación del SP con 20 parámetros posicionales.
-            // Se usa DB::select porque el SP retorna un ResultSet con el ID generado.
-            $resultado = DB::select('CALL SP_RegistrarUsuarioPorAdmin(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+            // Definimos la sentencia SQL.
+            // Usamos '?' (Placeholders) para evitar INYECCIÓN SQL. 
+            // Laravel escapará automáticamente cualquier caracter malicioso.
+            // NOTA: Hay exactamente 19 signos de interrogación para los 19 parámetros.
+            $sql = 'CALL SP_RegistrarUsuarioPorAdmin(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+
+            // Ejecutamos la consulta enviando el arreglo de datos en orden posicional estricto.
+            $resultado = DB::select($sql, [
                 
-                // [PARÁMETRO 1 - AUDITORÍA]
-                Auth::id(),                      // ID del Admin que ejecuta (Traza de Responsabilidad)
+                // [1] AUDITORÍA
+                Auth::id(),                      // Obtenemos el ID del Admin logueado para trazar quién hizo el registro.
 
-                // [PARÁMETROS 2-3 - IDENTIDAD DIGITAL]
-                $request->ficha,                 // Identificador único de empleado
-                $rutaFoto,           // URL del recurso gráfico (puede ser NULL)
+                // [2] IDENTIDAD DIGITAL
+                $request->ficha,                 // Número de empleado.
+                $rutaFoto,                       // URL de la foto (o NULL). ESTA ES LA POSICIÓN 3 CORRECTA.
 
-                // [PARÁMETROS 4-8 - IDENTIDAD HUMANA - INFO_PERSONAL]
-                $request->nombre,
-                $request->apellido_paterno,
-                $request->apellido_materno,
-                $request->fecha_nacimiento,
-                $request->fecha_ingreso,
+                // [3] IDENTIDAD HUMANA
+                $request->nombre,                // Nombre de pila.
+                $request->apellido_paterno,      // Apellido Paterno.
+                $request->apellido_materno,      // Apellido Materno.
+                $request->fecha_nacimiento,      // Fecha nacimiento (Validación de edad en SP).
+                $request->fecha_ingreso,         // Fecha ingreso (Cálculo antigüedad en SP).
 
-                // [PARÁMETROS 9-10 - CREDENCIALES DE ACCESO]
-                $request->email,                 // Login ID
-                Hash::make($request->password),  // Hash Bcrypt (Irreversible)
+                // [4] CREDENCIALES
+                $request->email,                 // Correo (Login).
+                Hash::make($request->password),  // ENCRIPTACIÓN: Convertimos "123456" en "$2y$10$..." (Irreversible).
 
-                // [PARÁMETROS 11-17 - ADSCRIPCIÓN ORGANIZACIONAL - FKs]
-                $request->id_rol,                // Perfil de seguridad (RBAC)
-                $request->id_regimen,            // Régimen contractual
-                $request->id_puesto,             // Puesto laboral
-                $request->id_centro_trabajo,     // Ubicación física
-                $request->id_departamento,       // Unidad departamental
-                $request->id_region,             // Región geográfica
-                $request->id_gerencia,           // Gerencia adscrita
+                // [5] ADSCRIPCIÓN (IDs numéricos)
+                $request->id_rol,                // Rol de seguridad.
+                $request->id_regimen,            // Régimen contractual.
+                $request->id_puesto,             // Puesto.
+                $request->id_centro_trabajo,     // Centro de Trabajo.
+                $request->id_departamento,       // Departamento.
+                $request->id_region,             // Región.
+                $request->id_gerencia,           // Gerencia.
 
-                // [PARÁMETROS 18-20 - METADATOS COMPLEMENTARIOS]
-                $request->nivel,
-                $request->clasificacion,
-                $rutaFoto                            // 20. _Url_Foto (Redundancia de contrato)
+                // [6] METADATOS COMPLEMENTARIOS
+                $request->nivel,                 // Nivel salarial.
+                $request->clasificacion          // Clasificación.
             ]);
 
             // ─────────────────────────────────────────────────────────────────
-            // FASE 3: RESPUESTA EXITOSA (SUCCESS HANDLER)
+            // FASE 4: RESPUESTA EXITOSA (SUCCESS HANDLER)
             // ─────────────────────────────────────────────────────────────────
+            // Si llegamos aquí, el SP se ejecutó (COMMIT) correctamente.
+            // Redirigimos al Index con un mensaje "toast" verde.
             return redirect()->route('usuarios.index')
-                ->with('success', 'Colaborador registrado exitosamente. Referencia de Sistema: #' . $resultado[0]->Id_Usuario);
+                ->with('success', 'Colaborador registrado exitosamente. ID: #' . ($resultado[0]->Id_Usuario ?? 'OK'));
 
         } catch (\Illuminate\Database\QueryException $e) {
-            // Eliminar archivo si la DB falló para no dejar basura en el servidor
+            // ─────────────────────────────────────────────────────────────────
+            // FASE 5: MANEJO DE EXCEPCIONES Y LIMPIEZA (ROLLBACK & CLEANUP)
+            // ─────────────────────────────────────────────────────────────────
+            
+            // [ANTI-ZOMBIE FILES]
+            // Si la base de datos falla (ej: Ficha duplicada), la foto YA se subió en la Fase 2.
+            // Debemos eliminarla físicamente para no dejar basura en el servidor.
             if ($rutaFoto && file_exists(public_path($rutaFoto))) {
                 unlink(public_path($rutaFoto));
             }
-            // ─────────────────────────────────────────────────────────────────
-            // FASE 4: MANEJO DE EXCEPCIONES DE NEGOCIO (EXCEPTION MASKING)
-            // ─────────────────────────────────────────────────────────────────
-            // El SP puede lanzar un SIGNAL SQLSTATE '45000' (ej: Ficha Duplicada).
-            // Capturamos ese error, lo limpiamos de códigos técnicos y lo mostramos.
-            
+
+            // [EXCEPTION MASKING]
+            // El SP lanza errores técnicos (SIGNAL SQLSTATE). 
+            // Usamos nuestros helpers para traducir "SQLSTATE[45000]..." a "La ficha ya existe".
             $mensajeSP = $this->extraerMensajeSP($e->getMessage());
             $tipoAlerta = $this->clasificarAlerta($mensajeSP);
 
+            // [STATE RESTORATION]
+            // 'back()' devuelve al usuario al formulario.
+            // 'withInput()' rellena los campos con lo que escribió (para que no tenga que escribir todo de nuevo).
+            // 'with()' envía el mensaje de error para mostrar la alerta roja.
             return back()->withInput()->with($tipoAlerta, $mensajeSP);
         }
     }
@@ -862,6 +885,7 @@ class UsuarioController extends Controller
             // Geografía
             'paises'          => DB::select('CALL SP_ListarPaisesActivos()'),      // Raíz de cascada geográfica
             'regiones'        => DB::select('CALL SP_ListarRegionesActivas()'),
+            'direcciones' => DB::select('CALL SP_ListarDireccionesActivas()'), // <--- ESTA LÍNEA FALTABA
             'gerencias'   => DB::select('CALL SP_ListarGerenciasAdminParaFiltro()'),
         ];
     }
