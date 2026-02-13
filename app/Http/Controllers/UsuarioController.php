@@ -331,7 +331,7 @@ class UsuarioController extends Controller
         // ─────────────────────────────────────────────────────────────────────
         // FASE 3: EJECUCIÓN BLINDADA DE PROCEDIMIENTO ALMACENADO
         // ─────────────────────────────────────────────────────────────────────
-        try {
+        //try {
             // Definimos la sentencia SQL.
             // Usamos '?' (Placeholders) para evitar INYECCIÓN SQL. 
             // Laravel escapará automáticamente cualquier caracter malicioso.
@@ -381,7 +381,7 @@ class UsuarioController extends Controller
             return redirect()->route('usuarios.index')
                 ->with('success', 'Colaborador registrado exitosamente. ID: #' . ($resultado[0]->Id_Usuario ?? 'OK'));
 
-        } catch (\Illuminate\Database\QueryException $e) {
+        /**} catch (\Illuminate\Database\QueryException $e) {
             // ─────────────────────────────────────────────────────────────────
             // FASE 5: MANEJO DE EXCEPCIONES Y LIMPIEZA (ROLLBACK & CLEANUP)
             // ─────────────────────────────────────────────────────────────────
@@ -404,7 +404,7 @@ class UsuarioController extends Controller
             // 'withInput()' rellena los campos con lo que escribió (para que no tenga que escribir todo de nuevo).
             // 'with()' envía el mensaje de error para mostrar la alerta roja.
             return back()->withInput()->with($tipoAlerta, $mensajeSP);
-        }
+        }*/
     }
 
     /**

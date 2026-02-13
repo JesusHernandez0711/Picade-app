@@ -455,23 +455,23 @@ CREATE PROCEDURE `SP_RegistrarUsuarioPorAdmin`(
     /* --------------------------------------------------------------------------------------------
        SECCIÓN DE PARÁMETROS: IDENTIDAD Y ACCESO (USER ACCOUNT)
        -------------------------------------------------------------------------------------------- */
-    IN _Ficha            VARCHAR(50),   -- [UNIQUE] Clave corporativa.
-    IN _Url_Foto         VARCHAR(255),  -- [OPCIONAL] Ruta relativa de la foto de perfil (Update v1.1).
+    IN _Ficha            VARCHAR(50) COLLATE utf8mb4_spanish_ci,   -- [UNIQUE] Clave corporativa.
+    IN _Url_Foto         VARCHAR(255) COLLATE utf8mb4_spanish_ci,  -- [OPCIONAL] Ruta relativa de la foto de perfil (Update v1.1).
                                         -- Si es NULL, se asume que no se cargó foto inicial.
     /* --------------------------------------------------------------------------------------------
        SECCIÓN DE PARÁMETROS: DATOS DEMOGRÁFICOS (HUMAN ENTITY)
        -------------------------------------------------------------------------------------------- */
-    IN _Nombre           VARCHAR(255),  -- Nombre(s) de pila.
-    IN _Apellido_Paterno VARCHAR(255),  -- Primer apellido.
-    IN _Apellido_Materno VARCHAR(255),  -- Segundo apellido.
+    IN _Nombre           VARCHAR(255) COLLATE utf8mb4_spanish_ci,  -- Nombre(s) de pila.
+    IN _Apellido_Paterno VARCHAR(255) COLLATE utf8mb4_spanish_ci,  -- Primer apellido.
+    IN _Apellido_Materno VARCHAR(255) COLLATE utf8mb4_spanish_ci,  -- Segundo apellido.
     IN _Fecha_Nacimiento DATE,          -- Usado para validar mayoría de edad y homonimia.
     IN _Fecha_Ingreso    DATE,          -- Usado para cálculo de antigüedad laboral.
 
 	/* -----------------------------------------------------------------
 	   2.5 SEGURIDAD Y ACCESOS Y PRIVILEGIOS (CRÍTICOS DE SISTEMA)
 	   ----------------------------------------------------------------- */
-    IN _Email            VARCHAR(255),  -- [UNIQUE] Clave de sistema.
-    IN _Contrasena       VARCHAR(255),  -- [SEGURIDAD] Debe llegar ya hasheada (Bcrypt/Argon2) desde Backend.
+    IN _Email            VARCHAR(255) COLLATE utf8mb4_spanish_ci,  -- [UNIQUE] Clave de sistema.
+    IN _Contrasena       VARCHAR(255) COLLATE utf8mb4_spanish_ci,  -- [SEGURIDAD] Debe llegar ya hasheada (Bcrypt/Argon2) desde Backend.
     IN _Id_Rol           INT,           -- [FK] Nivel de privilegios (Admin, Instructor, etc.).
 
     /* --------------------------------------------------------------------------------------------
@@ -484,8 +484,8 @@ CREATE PROCEDURE `SP_RegistrarUsuarioPorAdmin`(
     IN _Id_Departamento  INT,           -- [FK] Unidad departamental.
     IN _Id_Region        INT,           -- [FK] Región geográfica.
     IN _Id_Gerencia      INT,           -- [FK] Línea de mando.
-    IN _Nivel            VARCHAR(50),   -- Dato tabular (Nivel salarial/jerárquico).
-    IN _Clasificacion    VARCHAR(100)   -- Clasificación contractual.
+    IN _Nivel            VARCHAR(50) COLLATE utf8mb4_spanish_ci,   -- Dato tabular (Nivel salarial/jerárquico).
+    IN _Clasificacion    VARCHAR(100) COLLATE utf8mb4_spanish_ci   -- Clasificación contractual.
 )
 THIS_PROC: BEGIN
     
