@@ -7,30 +7,28 @@
 
     <title>PICADE — @yield('title', 'Acceso')</title>
 
-    {{-- ═══ BOOTSTRAP 5 (CDN) ═══ --}}
+     {{-- ═══ BOOTSTRAP 5 (CDN) ═══ --}}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
     {{-- ═══ BOOTSTRAP ICONS (CDN) ═══ --}}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
+    <link rel="stylesheet" href="{{ asset('css/Picade.css') }}">
+
+    <script src="{{ asset('js/Picade.js') }}"></script>
+    
+    @stack('scripts')
+    
     {{-- ═══ FUENTE: Montserrat ═══ --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
     {{-- ═══ TUS ESTILOS CUSTOM (Copiados íntegros) ═══ --}}
     <style>
-        :root {
-            --gob-negro:     #161a1d;
-            --gob-guinda:    #9b2247;
-            --gob-verde:     #1e5b4f;
-            --gob-dorado:    #a57f2c;
-            --gob-gris:      #98989A;
-            --gob-guinda-dk: #611232;
-            --gob-verde-dk:  #002f2a;
-            --gob-crema:     #e6d194;
-        }
-
         body {
             font-family: 'Montserrat', sans-serif;
             margin: 0;
@@ -106,25 +104,6 @@
             }
         }
 
-        /* ── TÍTULO GRADIENTE ── */
-        .text-gradient-guinda {
-            background: linear-gradient(135deg, var(--gob-guinda) 0%, var(--gob-guinda-dk) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-size: 2rem;
-            font-weight: 800;
-            letter-spacing: 3px;
-            text-align: center;
-            margin-bottom: 1.75rem;
-            user-select: none;
-        }
-        @media (min-width: 576px) {
-            .text-gradient-guinda {
-                font-size: 2.25rem;
-            }
-        }
-
         /* ── INPUT GROUPS ── */
         .input-glass {
             background: rgba(255, 255, 255, 0.70);
@@ -170,93 +149,6 @@
             transition: color 0.2s;
         }
         .btn-toggle-pw:hover { color: var(--gob-guinda); }
-
-        .form-check-input:checked {
-            background-color: var(--gob-guinda);
-            border-color: var(--gob-guinda);
-        }
-        .form-check-input:focus {
-            box-shadow: 0 0 0 3px rgba(155, 34, 71, 0.20);
-            border-color: var(--gob-guinda);
-        }
-
-        .link-dorado {
-            color: var(--gob-dorado);
-            font-weight: 600;
-            font-size: 0.75rem;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-        .link-dorado:hover { color: var(--gob-guinda); }
-
-        .btn-guinda {
-            background: linear-gradient(135deg, var(--gob-guinda), var(--gob-guinda-dk));
-            color: #fff;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            border: none;
-            border-radius: 0.5rem;
-            padding: 0.75rem 1rem;
-            transition: all 0.2s;
-        }
-        .btn-guinda:hover {
-            background: linear-gradient(135deg, var(--gob-guinda-dk), var(--gob-guinda-dk));
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(155, 34, 71, 0.30);
-            color: #fff;
-        }
-
-        .btn-verde {
-            background: linear-gradient(135deg, var(--gob-verde), var(--gob-verde-dk));
-            color: #fff;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            border: none;
-            border-radius: 0.5rem;
-            padding: 0.75rem 1rem;
-            text-decoration: none;
-            transition: all 0.2s;
-        }
-        .btn-verde:hover {
-            background: linear-gradient(135deg, var(--gob-verde-dk), var(--gob-verde-dk));
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(30, 91, 79, 0.30);
-            color: #fff;
-        }
-
-        .footer-text {
-            text-align: center;
-            font-size: 0.6875rem;
-            color: rgba(255, 255, 255, 0.5);
-            font-weight: 500;
-            letter-spacing: 0.05em;
-            margin-top: 1.5rem;
-            user-select: none;
-        }
-
-        .error-text {
-            font-size: 0.75rem;
-            color: #ef4444;
-            font-weight: 500;
-            margin-top: 0.375rem;
-        }
-        
-        /* Estilos adicionales para Registro */
-        .section-title {
-            color: var(--gob-verde-dk);
-            font-size: 0.85rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-bottom: 2px solid var(--gob-dorado);
-            padding-bottom: 0.25rem;
-            margin-bottom: 1rem;
-            margin-top: 1.5rem;
-        }
     </style>
 </head>
 

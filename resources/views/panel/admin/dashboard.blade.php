@@ -273,8 +273,6 @@
         setInterval(fetchRealTimeData, 5000);
     });
 
-
-
 function fetchRealTimeData() {
         fetch("{{ route('dashboard.data') }}")
             .then(res => res.json())
@@ -302,5 +300,6 @@ function fetchRealTimeData() {
             .catch(e => console.error(e));
     }
 </script>
+
 <style>.hover-scale:hover { transform: scale(1.02); cursor: pointer; transition: transform 0.2s; }</style>
 @endpush

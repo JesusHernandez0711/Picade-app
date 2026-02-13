@@ -1,0 +1,231 @@
+/**
+ * ══════════════════════════════════════════════════════════════════════════
+ * PICADE — ESTILOS GLOBALES
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ * UBICACIÓN:  public/css/picade.css
+ * CARGADO EN: layouts/Auth.blade.php  +  layouts/Panel.blade.php
+ *
+ * Todo estilo reutilizable entre vistas vive aquí.
+ * Los <style> inline de cada Blade solo deben tener CSS
+ * MUY específico de esa vista (y que no se use en ningún otro lugar).
+ * ══════════════════════════════════════════════════════════════════════════
+ */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   1. VARIABLES — Paleta Gobierno de México 2024-2030
+   ══════════════════════════════════════════════════════════════════════════ */
+:root {
+    --gob-negro:     #161a1d;
+    --gob-guinda:    #9b2247;
+    --gob-verde:     #1e5b4f;
+    --gob-dorado:    #a57f2c;
+    --gob-gris:      #98989A;
+    --gob-guinda-dk: #611232;
+    --gob-verde-dk:  #002f2a;
+    --gob-crema:     #e6d194;
+    --picade-guinda: #731834;
+    --picade-dorado: #bfa15f;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   2. BOTÓN GUINDA
+   ══════════════════════════════════════════════════════════════════════════ */
+.btn-guinda {
+    background: linear-gradient(135deg, var(--gob-guinda), var(--gob-guinda-dk));
+    color: #fff;
+    font-weight: 700;
+    border: none;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+}
+.btn-guinda:hover,
+.btn-guinda:focus {
+    background: linear-gradient(135deg, var(--gob-guinda-dk), var(--gob-guinda-dk));
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(155, 34, 71, 0.30);
+    color: #fff;
+}
+.btn-guinda:active,
+.btn-guinda.active {
+    transform: translateY(0);
+    color: #fff;
+}
+.btn-guinda:disabled {
+    opacity: 0.65;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   3. BOTÓN VERDE
+   ══════════════════════════════════════════════════════════════════════════ */
+.btn-verde {
+    background: linear-gradient(135deg, var(--gob-verde), var(--gob-verde-dk));
+    color: #fff;
+    font-weight: 700;
+    border: none;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.btn-verde:hover,
+.btn-verde:focus {
+    background: linear-gradient(135deg, var(--gob-verde-dk), var(--gob-verde-dk));
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(30, 91, 79, 0.30);
+    color: #fff;
+}
+.btn-verde:active,
+.btn-verde.active {
+    transform: translateY(0);
+    color: #fff;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   4. BOTÓN DORADO
+   ══════════════════════════════════════════════════════════════════════════ */
+.btn-dorado {
+    background: linear-gradient(135deg, var(--gob-dorado), #8a6a24);
+    color: #fff;
+    font-weight: 700;
+    border: none;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+}
+.btn-dorado:hover,
+.btn-dorado:focus {
+    background: linear-gradient(135deg, #8a6a24, #7d6020);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(165, 127, 44, 0.25);
+    color: #fff;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   5. LINK DORADO
+   ══════════════════════════════════════════════════════════════════════════ */
+.link-dorado {
+    color: var(--gob-dorado);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.link-dorado:hover {
+    color: var(--gob-guinda);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   6. CHECKBOX GUINDA (Override Bootstrap)
+   ══════════════════════════════════════════════════════════════════════════ */
+.form-check-input:checked {
+    background-color: var(--gob-guinda);
+    border-color: var(--gob-guinda);
+}
+.form-check-input:focus {
+    box-shadow: 0 0 0 3px rgba(155, 34, 71, 0.20);
+    border-color: var(--gob-guinda);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   7. PAGINACIÓN GUINDA (Override Bootstrap)
+   ══════════════════════════════════════════════════════════════════════════ */
+.pagination {
+    margin-bottom: 0;
+    gap: 5px;
+}
+.page-link {
+    color: var(--picade-guinda);
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+.page-link:hover {
+    color: #5a0e26;
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+.page-item.active .page-link {
+    z-index: 3;
+    color: #fff;
+    background-color: var(--picade-guinda);
+    border-color: var(--picade-guinda);
+}
+.page-item.disabled .page-link {
+    color: #6c757d;
+    pointer-events: none;
+    background-color: #fff;
+    border-color: #dee2e6;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   8. TEXTO GRADIENTE (Título PICADE)
+   ══════════════════════════════════════════════════════════════════════════ */
+.text-gradient-guinda {
+    background: linear-gradient(135deg, var(--gob-guinda) 0%, var(--gob-guinda-dk) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-align: center;
+    margin-bottom: 1.75rem;
+    user-select: none;
+}
+@media (min-width: 576px) {
+    .text-gradient-guinda {
+        font-size: 2.25rem;
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   9. SECCIÓN TÍTULO (Encabezados de formularios)
+   ══════════════════════════════════════════════════════════════════════════ */
+.section-title {
+    color: var(--gob-verde-dk);
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 2px solid var(--gob-dorado);
+    padding-bottom: 0.25rem;
+    margin-bottom: 1rem;
+    margin-top: 1.5rem;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   10. ERROR TEXT (Validación de formularios)
+   ══════════════════════════════════════════════════════════════════════════ */
+.error-text {
+    font-size: 0.75rem;
+    color: #ef4444;
+    font-weight: 500;
+    margin-top: 0.375rem;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   11. TABLAS — Contenedor redondeado
+   ══════════════════════════════════════════════════════════════════════════ */
+.rounded-table-container {
+    border-radius: 1rem !important;
+    overflow: hidden !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   12. UTILIDADES
+   ══════════════════════════════════════════════════════════════════════════ */
+.cursor-help { cursor: help; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   13. PIE INSTITUCIONAL
+   ══════════════════════════════════════════════════════════════════════════ */
+.footer-text {
+    text-align: center;
+    font-size: 0.6875rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    margin-top: 1.5rem;
+    user-select: none;
+}

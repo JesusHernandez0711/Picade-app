@@ -1,87 +1,124 @@
 <?php
 
+/*
+|--------------------------------------------------------------------------
+| 1. IMPORTACIÓN DE CONTROLADORES Y FACADES
+|--------------------------------------------------------------------------
+| Aquí importamos las clases necesarias para manejar la lógica de las rutas.
+| Laravel 12+ requiere importar los controladores explícitamente.
+*/
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\DashboardController; // ⬅️ 1. Importante: Importar el controlador
-use App\Http\Controllers\UsuarioController; // ⬅️ ¡AGREGA ESTO!
-
-//Route::get('/', function () {
-//    return view('welcome');
-//});
+use App\Http\Controllers\DashboardController;  // Lógica de gráficas y KPIs
+use App\Http\Controllers\UsuarioController;    // Lógica CRUD de usuarios y Perfil
+use App\Http\Controllers\CatalogoController;   // Lógica de cascadas AJAX (Estados, Municipios, etc.)
+use App\Http\Controllers\NotificationController; // (Futuro) Lógica de Logs
+use App\Http\Controllers\MessageController;      // (Futuro) Lógica de Soporte
 
 /*
 |--------------------------------------------------------------------------
-| Web Routes
+| 2. GESTIÓN DE ACCESO INICIAL (ROOT)
 |--------------------------------------------------------------------------
+| Redirección inteligente:
+| - Si el usuario ya inició sesión -> Lo manda al Dashboard.
+| - Si es un visitante -> Lo manda al Login.
 */
-
-// 1. Redirección Inteligente: Si ya entró -> Dashboard, si no -> Login
 Route::get('/', function () {
-    return Auth::check()
-        ? redirect('/dashboard')
-        : redirect('/login');
+    return Auth::check() ? redirect('/dashboard') : redirect('/login');
 });
 
-/* 2. Rutas de Autenticación COMPLETAS
-   'verify' => true: Habilita las rutas de verificación de correo.
-   Esto genera automáticamente: /email/verify, /email/resend, etc.
+/*
+|--------------------------------------------------------------------------
+| 3. RUTAS DE AUTENTICACIÓN (Librería UI/Auth)
+|--------------------------------------------------------------------------
+| 'verify' => true: Habilita las rutas internas para la verificación de correo.
+| Esto genera automáticamente: /login, /logout, /register, /password/reset, etc.
 */
 Auth::routes(['verify' => true]);
 
 /*
-   3. Dashboard Protegido
-   middleware(['auth', 'verified']):
-     - auth: Solo usuarios logueados.
-     - verified: Solo usuarios que ya dieron clic en el link del correo.
+|==========================================================================
+| 4. ECOSISTEMA PROTEGIDO (Requiere Login + Correo Verificado)
+|==========================================================================
+| Todas las rutas dentro de este grupo requieren que el usuario haya pasado
+| por el Login y haya verificado su email. Si no, Laravel lo expulsa.
+*/
+Route::middleware(['auth', 'verified'])->group(function () {
 
-Route::get('/dashboard', function () {
-    // Aquí cargarás tu vista real cuando la tengas: return view('admin.dashboard');
+    /* --------------------------------------------------------------------
+       A. MÓDULO DE DASHBOARD (Panel de Control)
+       -------------------------------------------------------------------- */
     
-    // Por ahora, vista temporal con botón de Salir para pruebas
-    return '
-        <div style="font-family: sans-serif; text-align: center; margin-top: 50px;">
-            <h1 style="color: #28a745;">¡Bienvenido al Dashboard!</h1>
-            <p>Has iniciado sesión y tu correo está verificado.</p>
-            
-            <form action="'.route('logout').'" method="POST" style="margin-top: 20px;">
-                <input type="hidden" name="_token" value="'.csrf_token().'">
-                <button type="submit" style="padding: 10px 20px; cursor: pointer; background: #dc3545; color: white; border: none; border-radius: 5px;">
-                    Cerrar Sesión
-                </button>
-            </form>
-        </div>
-    ';
-})->middleware(['auth', 'verified'])->name('dashboard');
-*/
+    // Vista Principal: Carga la vista según el rol (Admin, Instructor, Alumno)
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->name('dashboard');
 
-// Ruta Dashboard Principal (El controlador decide qué vista mostrar)
-Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])
-    ->name('dashboard');
+    // API Tiempo Real: Endpoint JSON para refrescar contadores y gráficas cada 5s
+    Route::get('/dashboard/data', [DashboardController::class, 'getDashboardData'])
+        ->name('dashboard.data');
 
-// ⬇️ [NUEVO] RUTA API PARA ACTUALIZACIÓN EN TIEMPO REAL (AJAX)
-// Esta es la ruta que llama el JavaScript cada 5 segundos para actualizar los números
-Route::get('/dashboard/data', [DashboardController::class, 'getDashboardData'])
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard.data');
 
-// 4. Ruta Home (Opcional, Laravel la trae por defecto, puedes dejarla o quitarla)
-//Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+    /* --------------------------------------------------------------------
+       B. MÓDULO DE PERFIL PERSONAL (Auto-gestión)
+       -------------------------------------------------------------------- */
+    
+    // Ver mi propio perfil (Vista con datos de Info_Personal)
+    Route::get('/perfil', [UsuarioController::class, 'perfil'])
+        ->name('perfil');
 
-/* NOTA: Ya no necesitas definir manualmente '/forgot-password' aquí abajo,
-   porque Auth::routes() ya se conecta automáticamente con tu 
-   ForgotPasswordController y ResetPasswordController personalizados.
-*/
+    // Actualizar datos generales (Nombre, Dirección, etc.)
+    Route::put('/perfil/actualizar', [UsuarioController::class, 'actualizarPerfil'])
+        ->name('perfil.actualizar');
 
-// 5. Rutas de Perfil (placeholder temporal)
-Route::get('/perfil', function () {
-    return 'Perfil en construcción';
-})->middleware(['auth'])->name('perfil');
+    // Actualizar credenciales sensibles (Email y Contraseña)
+    Route::put('/perfil/credenciales', [UsuarioController::class, 'actualizarCredenciales'])
+        ->name('perfil.credenciales');
 
-/* --------------------------------------------------------------------------
-   MÓDULO DE ADMINISTRACIÓN (Rutas protegidas)
-   -------------------------------------------------------------------------- */
 
-// ⬇️ ESTA ES LA LÍNEA QUE TE FALTABA PARA ARREGLAR EL ERROR
-// Crea automáticamente: usuarios.index, usuarios.store, usuarios.edit, etc.
-Route::resource('usuarios', UsuarioController::class)
-    ->middleware(['auth', 'verified']);
+    /* --------------------------------------------------------------------
+       C. CENTRO DE COMUNICACIONES (Header)
+       -------------------------------------------------------------------- */
+    
+    // Historial de Notificaciones (Log del Sistema)
+    // TODO: Crear NotificationController para manejar lógica real
+    Route::get('/notificaciones', function() { return view('notificaciones.index'); })
+        ->name('notificaciones.index');
+
+    // Centro de Mensajes (Soporte Técnico / Tickets)
+    // TODO: Crear MessageController para manejar lógica real
+    Route::get('/mensajes', function() { return view('mensajes.index'); })
+        ->name('mensajes.index');
+
+
+    /* --------------------------------------------------------------------
+       D. MÓDULO ADMINISTRATIVO DE USUARIOS (CRUD)
+       -------------------------------------------------------------------- */
+    
+    // Recurso completo para gestión de usuarios (Index, Create, Store, Edit, Update, Destroy)
+    // Mapea automáticamente a los métodos del UsuarioController.
+    Route::resource('usuarios', UsuarioController::class);
+
+    // Ruta personalizada para el Switch de Activo/Inactivo (AJAX o Form)
+    // Permite "Baja Lógica" sin borrar el registro.
+    Route::patch('/usuarios/{id}/estatus', [UsuarioController::class, 'cambiarEstatus'])
+        ->name('usuarios.estatus');
+
+
+    /* --------------------------------------------------------------------
+       E. API INTERNA DE CATÁLOGOS (Cascadas AJAX)
+       --------------------------------------------------------------------
+       Estas rutas alimentan los <select> dependientes en los formularios.
+       Ej: Al seleccionar un País, JS llama a /estados/{id} para llenar el siguiente combo.
+       -------------------------------------------------------------------- */
+    Route::prefix('api/catalogos')->group(function () {
+        
+        // --- Geografía ---
+        Route::get('/estados/{idPais}', [CatalogoController::class, 'estadosPorPais']);
+        Route::get('/municipios/{idEstado}', [CatalogoController::class, 'municipiosPorEstado']);
+        
+        // --- Organización (PEMEX) ---
+        Route::get('/subdirecciones/{idDireccion}', [CatalogoController::class, 'subdireccionesPorDireccion']);
+        Route::get('/gerencias/{idSubdireccion}', [CatalogoController::class, 'gerenciasPorSubdireccion']);
+    });
+
+});

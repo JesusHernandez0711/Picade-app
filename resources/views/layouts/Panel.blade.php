@@ -6,11 +6,26 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>PICADE - @yield('title')</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+     {{-- ═══ BOOTSTRAP 5 (CDN) ═══ --}}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    {{-- ═══ BOOTSTRAP ICONS (CDN) ═══ --}}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="{{ asset('css/Picade.css') }}">
+
+    <script src="{{ asset('js/Picade.js') }}"></script>
+    
+    @stack('scripts')
+    
+    {{-- ═══ FUENTE: Montserrat ═══ --}}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <style>
+<style>
         :root {
             --picade-guinda: #731834;
             --picade-dark: #1e1e2d;
@@ -19,12 +34,12 @@
         }
 
         body {
-            background-color: #ebedef; /* Color de fondo estilo CoreUI */
+            background-color: #ebedef;
             font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             overflow-x: hidden;
         }
 
-        /* --- 1. SIDEBAR (Estilo CoreUI Dark) --- */
+        /* --- 1. SIDEBAR --- */
         .sidebar {
             width: var(--sidebar-width);
             height: 100vh;
@@ -38,10 +53,7 @@
             flex-direction: column;
         }
 
-        /* Clase para ocultar sidebar */
-        .sidebar.hide {
-            margin-left: calc(var(--sidebar-width) * -1);
-        }
+        .sidebar.hide { margin-left: calc(var(--sidebar-width) * -1); }
 
         .sidebar-header {
             height: var(--header-height);
@@ -84,12 +96,9 @@
             margin-left: var(--sidebar-width);
         }
         
-        /* Clase para expandir contenido cuando se oculta sidebar */
-        .wrapper.expand {
-            margin-left: 0;
-        }
+        .wrapper.expand { margin-left: 0; }
 
-        /* --- 3. HEADER SUPERIOR (Blanco) --- */
+        /* --- 3. HEADER --- */
         .header {
             height: var(--header-height);
             background: #fff;
@@ -100,7 +109,6 @@
             justify-content: space-between;
         }
 
-        /* Botón Hamburguesa */
         .header-toggler {
             border: 0;
             background: transparent;
@@ -111,44 +119,57 @@
         }
         .header-toggler:hover { color: var(--picade-guinda); }
 
-        /* Iconos Header */
         .header-nav-icon {
             font-size: 1.3rem;
             color: #768192;
             padding: 0.5rem;
             position: relative;
+            text-decoration: none;
         }
-        
-        /* Dropdown Personalizado (Estilo Imagen) */
-        .custom-dropdown-menu {
-            width: 300px;
-            padding: 0;
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        }
-        .dropdown-header-label {
-            background: #f0f2f5;
-            padding: 8px 16px;
-            font-weight: bold;
-            font-size: 0.85rem;
-            color: #768192;
-            border-bottom: 1px solid #e4e7eb;
-        }
-        .dropdown-item {
-            padding: 10px 16px;
-            color: #4f5d73;
-            border-bottom: 1px solid #ebedef;
-            display: flex;
-            align-items: center;
-        }
-        .dropdown-item:last-child { border-bottom: 0; }
-        .dropdown-item i { margin-right: 12px; font-size: 1.1rem; }
-        .dropdown-item:hover { background-color: #f7f7f9; color: #2c3e50; }
 
-        /* Offcanvas Oscuro */
+        /* --- 4. DROPDOWNS PERSONALIZADOS --- */
+        .custom-dropdown-menu {
+            width: 350px;
+            padding: 0;
+            border-radius: 8px;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            border: 1px solid #d8dbe0;
+        }
+
+        .dropdown-header-label {
+            background: #f8f9fa;
+            padding: 12px 16px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: #4f5d73;
+            border-bottom: 1px solid #d8dbe0;
+        }
+
+        .dropdown-scroll-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .dropdown-footer {
+            background: #f8f9fa;
+            border-top: 1px solid #d8dbe0;
+        }
+
+        .dropdown-item-custom {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f0f2f5;
+            display: flex;
+            align-items: flex-start;
+            text-decoration: none;
+            color: #4f5d73;
+            transition: background 0.2s;
+        }
+
+        .dropdown-item-custom:hover { background-color: #f0f2f5; }
+
+        /* Offcanvas */
         .offcanvas-catalogs { background-color: #212529; color: white; }
 
-        /* Responsive */
         @media (max-width: 992px) {
             .sidebar { margin-left: calc(var(--sidebar-width) * -1); }
             .sidebar.show { margin-left: 0; }
@@ -186,10 +207,24 @@
                 </li>
             @endif
 
-            <li class="nav-title">PERSONAL</li>
+            {{--<li class="nav-title">PERSONAL</li>
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('perfil') }}">
                     <i class="bi bi-person-circle"></i> Mi Perfil
+                </a>
+            </li>  --}}
+        </ul>
+
+        <ul class="list-unstyled mb-0 pt-3">
+            <li class="nav-title">DOCUMENTACIÓN</li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ asset('storage/pdf/Manual_de_usuario.pdf') }}" target="_blank">
+                    <i class="bi bi-book"></i> Manual de usuario
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ asset('storage/pdf/Manual_tecnico.pdf') }}" target="_blank">
+                    <i class="bi bi-code-slash"></i> Manual técnico
                 </a>
             </li>
         </ul>
@@ -200,7 +235,6 @@
     </div>
 
     <div class="wrapper" id="main-wrapper">
-        
         <header class="header sticky-top">
             <div class="d-flex align-items-center">
                 <button class="header-toggler" type="button" onclick="toggleSidebar()">
@@ -211,16 +245,75 @@
 
             <div class="d-flex align-items-center">
                 
-                <a href="#" class="header-nav-icon me-3">
-                    <i class="bi bi-bell"></i>
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.5rem; top: 10px !important;">3</span>
-                </a>
-                
-                <a href="#" class="header-nav-icon me-3">
-                    <i class="bi bi-envelope"></i>
-                </a>
+                <div class="dropdown">
+                    <a href="#" class="header-nav-icon me-3" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-bell"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.5rem; top: 10px !important;">3</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end shadow custom-dropdown-menu">
+                        <div class="dropdown-header-label">Notificaciones</div>
+                        <div class="dropdown-scroll-list">
+                            <div class="dropdown-item-custom">
+                                <div class="bg-success text-white rounded-circle p-2 me-3 d-flex align-items-center justify-content-center" style="width:32px; height:32px;">
+                                    <i class="bi bi-check2-circle"></i>
+                                </div>
+                                <div>
+                                    <p class="mb-0 small">Se ha creado una nueva capacitación con el folio <strong>#CAP-3412</strong> correctamente.</p>
+                                    <small class="text-muted">Ayer a las 17:14</small>
+                                </div>
+                            </div>
+                            </div>
+                        <div class="dropdown-footer text-center p-2">
+                            <a href="{{ route('notificaciones.index') }}" class="text-decoration-none small text-primary fw-bold">Ver todo el historial</a>
+                        </div>
+                    </div>
+                </div>
 
-                <div class="vr h-50 mx-2 text-secondary"></div>
+                <div class="vr me-2 text-secondary opacity-50" style="height: 30px; align-self: center;"></div>
+
+                <div class="dropdown">
+                    <a href="#" class="header-nav-icon me-3" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-envelope"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark" style="font-size: 0.5rem; top: 10px !important;">7</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end shadow custom-dropdown-menu">
+                        <div class="dropdown-header-label">Mensajes de Soporte</div>
+                        <div class="dropdown-scroll-list">
+                            <a href="#" class="dropdown-item-custom">
+                                <div class="bg-dark text-white rounded-circle me-3 d-flex align-items-center justify-content-center" style="width:40px; height:40px;">
+                                    <i class="bi bi-person-fill"></i>
+                                </div>
+                                <div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="fw-bold small">Juan Pérez (Ficha 2314)</span>
+                                        <small class="text-muted">Hoy</small>
+                                    </div>
+                                    <p class="mb-0 small text-muted text-truncate" style="max-width: 230px;">Solicito reactivación de acceso, el administrador me desactivó...</p>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="dropdown-footer text-center p-2">
+                            <a href="{{ route('mensajes.index') }}" class="text-decoration-none small text-primary fw-bold">Ir al centro de soporte</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="vr me-3 text-secondary opacity-50" style="height: 30px; align-self: center;"></div>
+                
+                <div class="me-3 d-none d-sm-block text-end">
+                    <div class="fw-bold mb-0 text-dark" style="line-height: 1.1; font-size: 0.85rem;">
+                        {{-- Usamos Ficha con F mayúscula como está en tu tabla Usuarios --}}
+                        @if(Auth::user()->nombre_completo)
+                            {{ Auth::user()->nombre_completo }}
+                        @else
+                            FICHA: {{ Auth::user()->Ficha }}
+                        @endif
+                    </div>
+                    
+                    <small class="text-muted" style="font-size: 0.7rem;">
+                        {{ Auth::user()->Email }}
+                    </small>
+                </div>
 
                 <div class="dropdown ms-2">
                     <a href="#" class="d-flex align-items-center text-decoration-none" data-bs-toggle="dropdown" aria-expanded="false">
@@ -232,6 +325,7 @@
                     <ul class="dropdown-menu dropdown-menu-end custom-dropdown-menu shadow animate__animated animate__fadeIn">
                         
                         <li><div class="dropdown-header-label">Cuenta</div></li>
+
                         <li>
                             <a class="dropdown-item" href="#">
                                 <i class="bi bi-bell"></i> Notificaciones
@@ -248,7 +342,7 @@
                         <li><div class="dropdown-header-label mt-2">Ajustes</div></li>
                         <li>
                             <a class="dropdown-item" href="{{ route('perfil') }}">
-                                <i class="bi bi-person"></i> Perfil
+                                <i class="bi bi-person"></i> Mi Perfil
                             </a>
                         </li>
                         <li>

@@ -79,4 +79,26 @@ class Usuario extends Authenticatable implements MustVerifyEmail
     {
         return $this->Email;
     }
+
+    /**
+     * Relación uno a uno con Info_Personal
+     */
+    public function infoPersonal()
+    {
+        // 'Fk_Id_InfoPersonal' es la llave foránea en tu tabla Usuarios
+        // 'Id_InfoPersonal' es la llave primaria en la tabla Info_Personal
+        return $this->belongsTo(InfoPersonal::class, 'Fk_Id_InfoPersonal', 'Id_InfoPersonal');
+    }
+
+    /**
+     * Accessor para obtener el nombre completo automáticamente.
+     * Uso: $usuario->nombre_completo
+     */
+    public function getNombreCompletoAttribute()
+    {
+        if ($this->infoPersonal) {
+            return "{$this->infoPersonal->Nombre} {$this->infoPersonal->Apellido_Paterno} {$this->infoPersonal->Apellido_Materno}";
+        }
+        return "Usuario sin nombre";
+    }
 }
