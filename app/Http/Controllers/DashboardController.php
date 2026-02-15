@@ -163,143 +163,212 @@ class DashboardController extends Controller
      */
 
     #descomentar al finalizar
-    /**public function ofertaAcademica()
+    /**
+     * █ MÓDULO: MATRIZ ACADÉMICA — CONEXIÓN REAL (DB PERSISTENCE)
+     * ──────────────────────────────────────────────────────────────────────
+     * @business_logic:
+     * 1. Consulta el ciclo fiscal actual (Enero a Diciembre).
+     * 2. Ejecuta SP_ObtenerMatrizPICADE para traer la programación oficial.
+     * 3. Aplica el "Algoritmo de Priorización Cuádruple" en el servidor.
+     */
+    public function ofertaAcademica()
     {
         try {
-            // 1. Delimitación del Ciclo Temporal (Año Actual)
+            $hoy = now();
+            
+            // [FASE 1]: DELIMITACIÓN DEL CICLO (TIMELINE CONFIGURATION)
             $fechaMin = Carbon::now()->startOfYear()->toDateString();
             $fechaMax = Carbon::now()->endOfYear()->toDateString();
 
-            /**
-             * 2. CONSUMO DE PROCEDIMIENTO: SP_ObtenerMatrizPICADE
-             * Parámetros inyectados:
-             * - _Id_Gerencia: 0 (Consulta Global/Todas las gerencias)
-             * - _Fecha_Min: Inicio de ciclo
-             * - _Fecha_Max: Fin de ciclo
-             /
-            $cursos = DB::select('CALL SP_ObtenerMatrizPICADE(?, ?, ?)', [
+            // [FASE 2]: CONSUMO DE PROCEDIMIENTO (DB EXTRACTION)
+            // _Id_Gerencia = 0 (Consulta global para todos los trabajadores)
+            $cursosRaw = DB::select('CALL SP_ObtenerMatrizPICADE(?, ?, ?)', [
                 0, 
                 $fechaMin, 
                 $fechaMax
             ]);
-            
-            return view('components.MatrizAcademica', compact('cursos'));
-            //return view('panel.MatrizAcademica', compact('cursos'));
+
+            // [FASE 3]: MOTOR DE CLASIFICACIÓN TÁCTICA (DOUBLE-SORT ENGINE)
+            // Convertimos el array de la BD en una Colección para aplicar lógica forense.
+            $cursos = collect($cursosRaw)->map(function($curso) use ($hoy) {
+                $fInicio = Carbon::parse($curso->Fecha_Inicio);
+                $fTermino = Carbon::parse($curso->Fecha_Termino);
+                
+                // Mapeo de Cupo (Aseguramos integridad si el SP trae nulos)
+                $inscritos = $curso->Inscritos ?? 0;
+                $cupoMax = $curso->Cupo ?? 30;
+                $cupoLleno = $inscritos >= $cupoMax;
+
+                /**
+                 * REGLAS DE PONDERACIÓN (PLATINUM PRIORITY):
+                 * Prioridad 1: ABIERTO (Futuro + Cupo disponible)
+                 * Prioridad 2: CUPO LLENO (Futuro + Sin espacio)
+                 * Prioridad 3: EN CURSO (Hoy está entre fechas)
+                 * Prioridad 4: FINALIZADO (Terminó antes de hoy)
+                 */
+                if ($hoy->greaterThan($fTermino)) {
+                    $curso->priority = 4; // Fondo de la lista
+                } elseif ($hoy->between($fInicio, $fTermino)) {
+                    $curso->priority = 3; // Actividad actual
+                } elseif ($cupoLleno) {
+                    $curso->priority = 2; // Informativo: Sin cupo
+                } else {
+                    $curso->priority = 1; // Acción: Disponible para registro
+                }
+
+                return $curso;
+            })
+            // APLICAMOS EL ORDENAMIENTO DE DOBLE CAPA
+            ->sortBy([
+                ['priority', 'asc'],    // Agrupar por estado lógico
+                ['Fecha_Inicio', 'asc'] // Orden cronológico dentro de cada grupo
+            ]);
+
+            // [FASE 4]: TELEMETRÍA DE VOLUMEN
+            $totalCursos = $cursos->count();
+
+            // [FASE 5]: DESPACHO HIDRATADO
+            return view('components.MatrizAcademica', compact('cursos', 'totalCursos'));
 
         } catch (\Exception $e) {
-            // Log::error("Error Forense en Oferta Académica: " . $e->getMessage());
+            // PROTOCOLO DE FALLO (FAIL-SAFE)
             return redirect()->route('dashboard')
-                ->with('danger', 'Lo sentimos, el catálogo de cursos no está disponible en este momento.');
+                ->with('danger', 'Error de Integridad: No se pudo conectar con el catálogo de capacitaciones.');
         }
-    }*/
+    }
 
+    /*
+     * █ MÓDULO: MATRIZ ACADÉMICA — ESTRATEGIA DE VISUALIZACIÓN PRIORIZADA
+     * ──────────────────────────────────────────────────────────────────────
+     * @description: Orquestador de la oferta educativa. Gestiona 8 escenarios
+     * operativos de prueba para validar la respuesta de la UI ante diferentes
+     * estados del ciclo de vida de una capacitación.
+     * * @logic: Implementa un algoritmo de "Double-Sort" (Ordenamiento de Doble Capa):
+     * 1. Capa Primaria: Estado Operativo (Semáforo de Prioridad).
+     * 2. Capa Secundaria: Cronología Ascendente (Proximidad Temporal).
+     * * @param: None
+     * @return: \Illuminate\View\View (Matriz Académica Hidratada)
+     
     public function ofertaAcademica()
     {
-    $hoy = now();
-        $futuro = now()->addWeeks(3);
-        $pasado = now()->subWeeks(4);
+        // [FASE A]: DEFINICIÓN DE MARCOS TEMPORALES (TIME WINDOWS)
+        // Se establecen constantes de tiempo relativas para simular estados futuros y pasados.
+        $hoy = now();                              // Punto cero: Tiempo real del servidor.
+        $futuro = now()->addWeeks(3);              // Ventana de registro: +21 días.
+        $pasado = now()->subWeeks(4);              // Histórico: -28 días.
 
-        // 1. INYECCIÓN MANUAL DE ESCENARIOS OPERATIVOS
+        // [FASE B]: INYECCIÓN DE DATASET DE PRUEBA (MOCK DATA ENGINE)
+        // Se construye una colección de objetos planos que emulan el comportamiento de la base de datos.
         $cursosRaw = collect([
-            // --- 🟢 ESTADO: ABIERTO (Nuevas Programaciones) ---
+            // --- GRUPO: ABIERTOS (Prioridad Máxima de Negocio) ---
+            // Cursos con fecha futura y cupo disponible.
             (object)[
-                'Id_Capacitacion' => 1, 'Folio_Curso' => 'CAP-2026-001', 'Codigo_Tema' => 'SEG-IND-01',
-                'Nombre_Tema' => 'Seguridad en Espacios Confinados', 'Nombre_Gerencia' => 'GERENCIA DE DUCTOS',
-                'Tipo_Capacitacion' => 'Teórico-Práctico', 'Modalidad_Capacitacion' => 'Presencial', 'Duracion_Horas' => 16,
-                'Nombre_Sede' => 'Centro de Capacitación Vhsa', 'Instructor' => 'Ing. Roberto Sierra',
+                'Id_Capacitacion' => 1, 'Folio_Curso' => 'CAP-001', 'Codigo_Tema' => 'SEG-01',
+                'Nombre_Tema' => 'Seguridad Espacios Confinados', 'Nombre_Gerencia' => 'DUCTOS',
+                'Tipo_Capacitacion' => 'Práctico', 'Modalidad_Capacitacion' => 'Presencial', 'Duracion_Horas' => 16,
+                'Nombre_Sede' => 'Centro Vhsa', 'Instructor' => 'Ing. Roberto Sierra',
                 'Fecha_Inicio' => $futuro->toDateString(), 'Fecha_Termino' => $futuro->addDays(2)->toDateString(),
-                'Inscritos' => 2, 'Cupo' => 20, 'Descripcion_Tema' => 'Protocolos de entrada y rescate en áreas con atmósfera peligrosa.'
+                'Inscritos' => 2, 'Cupo' => 20, 'Descripcion_Tema' => 'Protocolos de entrada y rescate en áreas peligrosas.'
             ],
             (object)[
-                'Id_Capacitacion' => 2, 'Folio_Curso' => 'CAP-2026-002', 'Codigo_Tema' => 'OP-PLAT-05',
-                'Nombre_Tema' => 'Operación de Válvulas de Control', 'Nombre_Gerencia' => 'SUBDIRECCIÓN DE PRODUCCIÓN',
+                'Id_Capacitacion' => 2, 'Folio_Curso' => 'CAP-002', 'Codigo_Tema' => 'OP-05',
+                'Nombre_Tema' => 'Operación de Válvulas', 'Nombre_Gerencia' => 'PRODUCCIÓN',
                 'Tipo_Capacitacion' => 'Técnico', 'Modalidad_Capacitacion' => 'Campo', 'Duracion_Horas' => 24,
-                'Nombre_Sede' => 'Activo Integral Bellota', 'Instructor' => 'Ing. Marco Antonio Sosa',
+                'Nombre_Sede' => 'Activo Bellota', 'Instructor' => 'Ing. Marco Sosa',
                 'Fecha_Inicio' => $futuro->addDays(5)->toDateString(), 'Fecha_Termino' => $futuro->addDays(8)->toDateString(),
-                'Inscritos' => 8, 'Cupo' => 15, 'Descripcion_Tema' => 'Ajuste y calibración de actuadores neumáticos e hidráulicos.'
+                'Inscritos' => 8, 'Cupo' => 15, 'Descripcion_Tema' => 'Ajuste de actuadores neumáticos e hidráulicos.'
             ],
-
-            // --- 🟡 ESTADO: EN CURSO (Actividad Actual) ---
+            
+            // --- GRUPO: LLENOS / PRÓXIMOS (Prioridad de Información) ---
+            // Cursos que ya no aceptan registros pero siguen vigentes en calendario.
             (object)[
-                'Id_Capacitacion' => 3, 'Folio_Curso' => 'CAP-2026-003', 'Codigo_Tema' => 'MANT-ELEC-02',
-                'Nombre_Tema' => 'Mantenimiento a Motores Eléctricos', 'Nombre_Gerencia' => 'GERENCIA OPERATIVA NORESTE',
-                'Tipo_Capacitacion' => 'Práctico', 'Modalidad_Capacitacion' => 'Taller', 'Duracion_Horas' => 32,
-                'Nombre_Sede' => 'Taller de Electricidad Kaan Ceiba', 'Instructor' => 'Téc. Carlos Juárez',
-                'Fecha_Inicio' => now()->subDays(1)->toDateString(), 'Fecha_Termino' => now()->addDays(2)->toDateString(),
-                'Inscritos' => 10, 'Cupo' => 10, 'Descripcion_Tema' => 'Diagnóstico de fallas en devanados y sistemas de aislamiento.'
-            ],
-            (object)[
-                'Id_Capacitacion' => 4, 'Folio_Curso' => 'CAP-2026-004', 'Codigo_Tema' => 'SSYA-ENV-09',
-                'Nombre_Tema' => 'Normatividad Ambiental PEMEX', 'Nombre_Gerencia' => 'GERENCIA DE SSYA',
-                'Tipo_Capacitacion' => 'Teórico', 'Modalidad_Capacitacion' => 'Virtual', 'Duracion_Horas' => 10,
-                'Nombre_Sede' => 'Plataforma MS Teams', 'Instructor' => 'Dra. Elena Martínez',
-                'Fecha_Inicio' => now()->toDateString(), 'Fecha_Termino' => now()->addDays(1)->toDateString(),
-                'Inscritos' => 45, 'Cupo' => 50, 'Descripcion_Tema' => 'Actualización sobre la Ley General de Equilibrio Ecológico.'
-            ],
-
-            // --- 🔘 ESTADO: CERRADO (Cupo Lleno o Registro Vencido) ---
-            (object)[
-                'Id_Capacitacion' => 5, 'Folio_Curso' => 'CAP-2026-005', 'Codigo_Tema' => 'ADM-FIN-12',
-                'Nombre_Tema' => 'Presupuestos y Costos Operativos', 'Nombre_Gerencia' => 'GERENCIA DE FINANZAS',
-                'Tipo_Capacitacion' => 'Administrativo', 'Modalidad_Capacitacion' => 'Virtual', 'Duracion_Horas' => 20,
-                'Nombre_Sede' => 'Aula Virtual SAP', 'Instructor' => 'Lic. Arturo Vidal',
+                'Id_Capacitacion' => 5, 'Folio_Curso' => 'CAP-005', 'Codigo_Tema' => 'FIN-12',
+                'Nombre_Tema' => 'Presupuestos Operativos', 'Nombre_Gerencia' => 'FINANZAS',
+                'Tipo_Capacitacion' => 'Admivo', 'Modalidad_Capacitacion' => 'Virtual', 'Duracion_Horas' => 20,
+                'Nombre_Sede' => 'Aula SAP', 'Instructor' => 'Lic. Arturo Vidal',
                 'Fecha_Inicio' => $hoy->addDays(3)->toDateString(), 'Fecha_Termino' => $hoy->addDays(6)->toDateString(),
-                'Inscritos' => 30, 'Cupo' => 30, 'Descripcion_Tema' => 'Optimización de recursos y control de gastos en proyectos.'
+                'Inscritos' => 30, 'Cupo' => 30, 'Descripcion_Tema' => 'Optimización de recursos y control de gastos.'
             ],
             (object)[
-                'Id_Capacitacion' => 6, 'Folio_Curso' => 'CAP-2026-006', 'Codigo_Tema' => 'TEC-IT-01',
-                'Nombre_Tema' => 'Ciberseguridad Institucional', 'Nombre_Gerencia' => 'TECNOLOGÍAS DE INFORMACIÓN',
+                'Id_Capacitacion' => 6, 'Folio_Curso' => 'CAP-006', 'Codigo_Tema' => 'IT-01',
+                'Nombre_Tema' => 'Ciberseguridad', 'Nombre_Gerencia' => 'TI',
                 'Tipo_Capacitacion' => 'Técnico', 'Modalidad_Capacitacion' => 'Híbrida', 'Duracion_Horas' => 40,
                 'Nombre_Sede' => 'Edificio Pirámide', 'Instructor' => 'Mtro. Fernando Galicia',
                 'Fecha_Inicio' => $hoy->addDays(1)->toDateString(), 'Fecha_Termino' => $hoy->addDays(5)->toDateString(),
-                'Inscritos' => 12, 'Cupo' => 25, 'Descripcion_Tema' => 'Protección de infraestructura crítica y datos sensibles.'
+                'Inscritos' => 25, 'Cupo' => 25, 'Descripcion_Tema' => 'Protección de infraestructura crítica y datos.'
             ],
 
-            // --- 🔴 ESTADO: FINALIZADO (Histórico) ---
+            // --- GRUPO: EN CURSO (Prioridad de Monitoreo) ---
+            // Cursos que están sucediendo en este momento (Hoy está entre Inicio y Fin).
             (object)[
-                'Id_Capacitacion' => 7, 'Folio_Curso' => 'CAP-2025-080', 'Codigo_Tema' => 'IND-RH-01',
-                'Nombre_Tema' => 'Inducción al Sistema PICADE', 'Nombre_Gerencia' => 'RECURSOS HUMANOS',
-                'Tipo_Capacitacion' => 'Inducción', 'Modalidad_Capacitacion' => 'Presencial', 'Duracion_Horas' => 8,
-                'Nombre_Sede' => 'Auditorio Pemex', 'Instructor' => 'Jesús (Admin)',
-                'Fecha_Inicio' => $pasado->toDateString(), 'Fecha_Termino' => $pasado->addDays(1)->toDateString(),
-                'Inscritos' => 150, 'Cupo' => 150, 'Descripcion_Tema' => 'Capacitación para el uso de la nueva plataforma de desarrollo.'
+                'Id_Capacitacion' => 3, 'Folio_Curso' => 'CAP-003', 'Codigo_Tema' => 'ELEC-02',
+                'Nombre_Tema' => 'Motores Eléctricos', 'Nombre_Gerencia' => 'NORESTE',
+                'Tipo_Capacitacion' => 'Práctico', 'Modalidad_Capacitacion' => 'Taller', 'Duracion_Horas' => 32,
+                'Nombre_Sede' => 'Taller Kaan Ceiba', 'Instructor' => 'Téc. Carlos Juárez',
+                'Fecha_Inicio' => now()->subDays(1)->toDateString(), 'Fecha_Termino' => now()->addDays(2)->toDateString(),
+                'Inscritos' => 10, 'Cupo' => 10, 'Descripcion_Tema' => 'Diagnóstico de fallas en devanados.'
             ],
             (object)[
-                'Id_Capacitacion' => 8, 'Folio_Curso' => 'CAP-2025-085', 'Codigo_Tema' => 'SALUD-01',
-                'Nombre_Tema' => 'Primeros Auxilios Avanzados', 'Nombre_Gerencia' => 'SERVICIOS DE SALUD',
+                'Id_Capacitacion' => 4, 'Folio_Curso' => 'CAP-004', 'Codigo_Tema' => 'ENV-09',
+                'Nombre_Tema' => 'Normativa Ambiental', 'Nombre_Gerencia' => 'SSYA',
+                'Tipo_Capacitacion' => 'Teórico', 'Modalidad_Capacitacion' => 'Virtual', 'Duracion_Horas' => 10,
+                'Nombre_Sede' => 'MS Teams', 'Instructor' => 'Dra. Elena Martínez',
+                'Fecha_Inicio' => now()->toDateString(), 'Fecha_Termino' => now()->addDays(1)->toDateString(),
+                'Inscritos' => 45, 'Cupo' => 50, 'Descripcion_Tema' => 'Actualización sobre la Ley Ecológica (LGEEPA).'
+            ],
+
+            // --- GRUPO: FINALIZADOS (Prioridad de Archivo) ---
+            // Cursos cuya fecha de término es anterior a hoy.
+            (object)[
+                'Id_Capacitacion' => 7, 'Folio_Curso' => 'CAP-2025-080', 'Codigo_Tema' => 'IND-01',
+                'Nombre_Tema' => 'Inducción PICADE', 'Nombre_Gerencia' => 'RH',
+                'Tipo_Capacitacion' => 'Inducción', 'Modalidad_Capacitacion' => 'Presencial', 'Duracion_Horas' => 8,
+                'Nombre_Sede' => 'Auditorio', 'Instructor' => 'Jesús Admin',
+                'Fecha_Inicio' => $pasado->toDateString(), 'Fecha_Termino' => $pasado->addDays(1)->toDateString(),
+                'Inscritos' => 150, 'Cupo' => 150, 'Descripcion_Tema' => 'Uso integral de la nueva plataforma.'
+            ],
+            (object)[
+                'Id_Capacitacion' => 8, 'Folio_Curso' => 'CAP-2025-085', 'Codigo_Tema' => 'SAL-01',
+                'Nombre_Tema' => 'Primeros Auxilios', 'Nombre_Gerencia' => 'SALUD',
                 'Tipo_Capacitacion' => 'Práctico', 'Modalidad_Capacitacion' => 'Presencial', 'Duracion_Horas' => 16,
-                'Nombre_Sede' => 'Hospital Regional Villahermosa', 'Instructor' => 'Paramédico Sofía Ruiz',
+                'Nombre_Sede' => 'Hospital Vhsa', 'Instructor' => 'Parám. Sofía Ruiz',
                 'Fecha_Inicio' => $pasado->subDays(5)->toDateString(), 'Fecha_Termino' => $pasado->subDays(3)->toDateString(),
-                'Inscritos' => 25, 'Cupo' => 25, 'Descripcion_Tema' => 'Atención pre-hospitalaria en accidentes de alto impacto.'
+                'Inscritos' => 25, 'Cupo' => 25, 'Descripcion_Tema' => 'Atención pre-hospitalaria de accidentes.'
             ],
         ]);
-        // 2. MOTOR DE CLASIFICACIÓN TÁCTICA (DOUBLE SORT)
+
+        // [FASE C]: MOTOR DE CLASIFICACIÓN TÁCTICA (DATA PONDERATION)
+        // Se recorre la colección para asignar un "Peso de Prioridad" (Priority Weight) a cada fila.
         $cursos = $cursosRaw->map(function($curso) use ($hoy) {
             $fInicio = Carbon::parse($curso->Fecha_Inicio);
             $fTermino = Carbon::parse($curso->Fecha_Termino);
             $cupoLleno = ($curso->Inscritos ?? 0) >= ($curso->Cupo ?? 30);
 
-            // Asignación de Peso de Prioridad
-            if ($hoy->greaterThan($fTermino)) {
-                $curso->priority = 4; // FINALIZADOS
-            } elseif ($hoy->between($fInicio, $fTermino)) {
-                $curso->priority = 3; // EN CURSO
-            } elseif ($cupoLleno) {
-                $curso->priority = 2; // CUPO LLENO
-            } else {
-                $curso->priority = 1; // ABIERTOS (Prioridad Máxima)
+            // Algoritmo de decisión de jerarquía visual:
+            if ($hoy->greaterThan($fTermino)) { 
+                $curso->priority = 4; // NIVEL 4: Histórico (Finalizados).
+            } elseif ($hoy->between($fInicio, $fTermino)) { 
+                $curso->priority = 3; // NIVEL 3: Ejecución (En Curso).
+            } elseif ($cupoLleno) { 
+                $curso->priority = 2; // NIVEL 2: Información (Cupo Lleno).
+            } else { 
+                $curso->priority = 1; // NIVEL 1: Acción (Abiertos / Registro disponible).
             }
-
             return $curso;
         })
+        // [FASE D]: EJECUCIÓN DEL DOBLE ORDENAMIENTO
+        // Se aplica la matriz de ordenamiento: Primero por Peso (ASC), luego por Fecha de Inicio (ASC).
         ->sortBy([
-            ['priority', 'asc'],    // Primer Criterio: Estado Operativo
-            ['Fecha_Inicio', 'asc'] // Segundo Criterio: Cronología (Los más cercanos primero)
+            ['priority', 'asc'],    // Asegura que los Abiertos (1) queden al principio.
+            ['Fecha_Inicio', 'asc'] // Dentro de cada grupo, el que inicia más pronto va primero.
         ]);
 
-        // 3. TELEMETRÍA: CONTEO TOTAL DE LA MATRIZ
+        // [FASE E]: TELEMETRÍA DE CICLO (COUNTING ENGINE)
+        // Se extrae la magnitud total de la matriz para el contador del encabezado UI.
         $totalCursos = $cursos->count();
 
+        // [FASE F]: DESPACHO DE VISTA (SSR DELIVERY)
+        // Se inyecta la colección procesada y la métrica de volumen a la capa de presentación.
         return view('components.MatrizAcademica', compact('cursos', 'totalCursos'));
     }
 
@@ -313,33 +382,146 @@ class DashboardController extends Controller
         return back()->with('info', 'La función de inscripción para el curso #' . $id . ' estará disponible pronto.');
     }
 
-
-    /**
-     * █ MÓDULO: TRANSACCIÓN DE INSCRIPCIÓN
+/*
+     * █ MÓDULO: TRANSACCIÓN DE INSCRIPCIÓN — PROCESADOR TRANSACCIONAL
      * ──────────────────────────────────────────────────────────────────────
-     * Procesa la solicitud del trabajador y la vincula con el curso.
-     * * @param Request $request - Contiene id_capacitacion del modal.
-     */
+     * @description: Gestiona el envío de la solicitud de inscripción de un 
+     * trabajador. Delega la lógica de negocio pesimista al motor MariaDB.
+     * * @protocol: ACID (Atomicity, Consistency, Isolation, Durability).
+     * @security: Implementa protección contra CSRF y validación de tipos.
+     * * @param Request $request: Contiene el `id_capacitacion` inyectado por el modal.
+     * @return \Illuminate\Http\RedirectResponse (Redirección con Flash Message).
+     *
     public function confirmarInscripcion(Request $request)
     {
-        $request->validate(['id_capacitacion' => 'required|integer']);
+        // 1. VALIDACIÓN FORENSE DE ENTRADA
+        // Asegura que el ID recibido sea un entero positivo, mitigando ataques de inyección.
+        $request->validate(['id_capacitacion' => 'required|integer|min:1']);
 
         try {
-            // LLAMADO AL SP REAL EN MARIADB
-            $resultado = DB::select('CALL SP_InscribirParticipante(?, ?)', [
-                Auth::id(),
+            // 2. EJECUCIÓN DE PROCEDIMIENTO ALMACENADO (DB BRIDGE)
+            // Se invoca el SP_RegistrarParticipacionCapacitacion pasando:
+            // - ID del Usuario (Extraído de la Sesión Segura).
+            // - ID de la Capacitación (Extraído del Request).
+            $resultado = DB::select('CALL SP_RegistrarParticipacionCapacitacion(?, ?)', [
+                Auth::id(), 
                 $request->id_capacitacion
             ]);
 
-            $respuesta = $resultado[0];
+            /* 3. VERIFICACIÓN DE RESPUESTA (Protección contra pantalla en blanco)
+            if (empty($resultado)) {
+                return back()->with('danger', 'La base de datos no devolvió una respuesta válida.');
+            }*
 
-            return redirect()->route('cursos.matriz')->with(
-                $respuesta->Status === 'SUCCESS' ? 'success' : 'danger',
-                $respuesta->Mensaje
-            );
+            // 3. EXTRACCIÓN DE RESULTADO OPERATIVO
+            // El SP devuelve una tabla con columnas 'Accion' y 'Mensaje'.
+            $res = $resultado[0];
+            
+            // 4. MAPEÓ DE SEMÁNTICA VISUAL (UX ALERT MAPPING)
+            // Se determina el color de la notificación según la respuesta lógica del SP.
+            $tipo = match($res->Accion) {
+                'INSCRITO'    => 'success',  // Color Verde: Éxito total.
+                'YA_INSCRITO' => 'warning',  // Color Amarillo: Acción redundante pero segura.
+                'CUPO_LLENO'  => 'danger',   // Color Rojo: Denegación por límites físicos.
+                default       => 'info'      // Color Azul: Casos informativos.
+            };
+
+            // 5. CIERRE DE TRANSACCIÓN Y FEEDBACK
+            // Redirige al Dashboard con el mensaje oficial emitido por la base de datos.
+            //return redirect()->route('dashboard')->with($tipo, $res->Mensaje);
+            return back()->with($tipo, $res->Mensaje);
 
         } catch (\Exception $e) {
-            return back()->with('danger', 'Error de comunicación con la base de datos.');
+            // 6. MANEJO DE EXCEPCIONES TÉCNICAS (FAIL-SAFE)
+            // En caso de caída de BD o error de sintaxis, se informa sin exponer datos sensibles.
+            //return redirect()->route('dashboard')->with('danger', 'ERROR CRÍTICO: El motor de inscripciones no está respondiendo.');
+        }
+    }
+
+    /**
+     * █ TRANSACCIÓN: REGISTRO DE INSCRIPCIÓN (STAGING)
+     * ──────────────────────────────────────────────────────────────────────
+     * Procesa el formulario del modal usando el SP de registro pesimista.
+     */
+    public function confirmarInscripcion(Request $request)
+    {
+        $request->validate(['id_capacitacion' => 'required|integer|min:1']);
+
+        try {
+            // Ejecución de la transacción atómica
+            $resultado = DB::select('CALL SP_RegistrarParticipacionCapacitacion(?, ?)', [
+                Auth::id(), 
+                $request->id_capacitacion
+            ]);
+
+            if (empty($resultado)) {
+                return back()->with('danger', 'La base de datos no emitió una respuesta válida.');
+            }
+
+            $res = $resultado[0];
+            
+            // Mapeo semántico de la respuesta del SP
+            $tipo = match($res->Accion) {
+                'INSCRITO'    => 'success',
+                'YA_INSCRITO' => 'warning',
+                'CUPO_LLENO'  => 'danger',
+                'ESTATUS_INVALIDO' => 'danger',
+                default       => 'info'
+            };
+
+            return back()->with($tipo, $res->Mensaje);
+
+        } catch (\Exception $e) {
+            return back()->with('danger', 'Error Crítico: El servicio de registro está temporalmente fuera de línea.');
+        }
+    }
+
+    /**
+     * █ EXPLORADOR: DETALLE FORENSE — MOTOR DE RECONSTRUCCIÓN DE EXPEDIENTE
+     * ──────────────────────────────────────────────────────────────────────
+     * @description: Recupera el estado completo de un curso mediante una única
+     * conexión, capturando múltiples conjuntos de resultados (ResultSets).
+     * * @standard: Platinum Forensic V.4 (Multi-ResultSet Retrieval).
+     * * @param int $id: Identificador único del detalle de capacitación (DatosCap).
+     * @return \Illuminate\View\View (Vista de Expediente Hidratada).
+     */
+    public function verExpediente($id)
+    {
+        try {
+            // 1. INICIALIZACIÓN DE CONEXIÓN NATIVA (PDO HANDLER)
+            // Obtenemos la instancia PDO de la conexión para usar métodos de bajo nivel.
+            $pdo = DB::connection()->getPdo();
+            
+            // 2. PREPARACIÓN Y EJECUCIÓN DEL STATEMENT
+            $stmt = $pdo->prepare("CALL SP_ConsultarCapacitacionEspecifica(?)");
+            $stmt->execute([$id]);
+
+            // 3. CAPTURA DEL SET 1: METADATOS Y KPIs (HEADER)
+            // Contiene Folio, Tema, Instructor, Cupos calculados y Banderas de estado.
+            $header = $stmt->fetchAll(\PDO::FETCH_OBJ)[0] ?? null;
+            
+            // 4. SALTO DE PUNTERO AL SET 2: NÓMINA DE PARTICIPANTES (BODY)
+            // Se mueve el cursor interno del motor de BD al siguiente bloque de datos.
+            $stmt->nextRowset();
+            $participantes = $stmt->fetchAll(\PDO::FETCH_OBJ);
+
+            // 5. SALTO DE PUNTERO AL SET 3: HISTORIAL DE VERSIONES (FOOTER)
+            // Recupera la bitácora de cambios cronológica para la línea de tiempo.
+            $stmt->nextRowset();
+            $historial = $stmt->fetchAll(\PDO::FETCH_OBJ);
+
+            // 6. INTEGRIDAD REFERENCIAL (EMPTY CHECK)
+            if (!$header) {
+                return redirect()->route('cursos.matriz')->with('danger', 'Expediente no localizado.');
+            }
+
+            // 7. DESPACHO DE EXPEDIENTE CONSOLIDADO
+            return view('panel.admin.capacitaciones.expediente', compact('header', 'participantes', 'historial'));
+
+        } catch (\Exception $e) {
+            // 8. EXCEPCIÓN DE RECONSTRUCCIÓN
+            // Captura errores de "Deadlock" o fallas en el mapeo de los rowsets.
+            return back()->with('danger', 'Error de Integridad: No se pudo reconstruir el expediente forense del curso.');
         }
     }
 

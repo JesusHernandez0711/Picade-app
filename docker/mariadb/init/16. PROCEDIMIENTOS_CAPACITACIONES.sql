@@ -1161,7 +1161,7 @@ THIS_PROC: BEGIN
         /* ------------------------------------------------------------------
            GRUPO D: ANALÍTICA (KPIs)
            Métricas rápidas para visualización en el grid.
-           ------------------------------------------------------------------ 
+           ------------------------------------------------------------------*/
         /* -----------------------------------------------------------------------------------------
            [KPIs DE PLANEACIÓN - PLANIFICADO]
            Datos estáticos definidos al crear el curso. Representan la "Meta".
@@ -1385,7 +1385,7 @@ THIS_PROC: BEGIN
         /* ------------------------------------------------------------------
            GRUPO D: ANALÍTICA (KPIs)
            Métricas rápidas para visualización en el grid.
-           ------------------------------------------------------------------ 
+           ------------------------------------------------------------------ */
         /* -----------------------------------------------------------------------------------------
            [KPIs DE PLANEACIÓN - PLANIFICADO]
            Datos estáticos definidos al crear el curso. Representan la "Meta".
@@ -1774,17 +1774,17 @@ THIS_PROC: BEGIN
         `VC`.`Asistentes_Meta`             AS `Cupo_Programado_de_Asistentes`,
         `VC`.`Asistentes_Manuales`, -- El campo que pueden editar*/
         
-        /* [OPTIMIZACIÓN]: Dato directo de la vista       
-		/* [NUEVO] CAMPOS DIRECTOS DE LA VISTA 
+        /* [OPTIMIZACIÓN]: Dato directo de la vista       */
+		/* [NUEVO] CAMPOS DIRECTOS DE LA VISTA*/
         `VC`.`Participantes_Activos`       AS `Inscritos_en_Sistema`,   -- El dato automático
         `VC`.`Total_Impacto_Real`          AS `Total_de_Asistentes_Reales`,         -- El resultado final (GREATEST)
         `VC`.`Participantes_Baja` 		   AS `Total_de_Bajas`,
-        `VC`.`Cupo_Disponible`,*/
+        `VC`.`Cupo_Disponible`,
         
 		/* ------------------------------------------------------------------
            GRUPO D: ANALÍTICA (KPIs)
            Métricas rápidas para visualización en el grid.
-           ------------------------------------------------------------------ 
+           ------------------------------------------------------------------ */
         /* -----------------------------------------------------------------------------------------
            [KPIs DE PLANEACIÓN - PLANIFICADO]
            Datos estáticos definidos al crear el curso. Representan la "Meta".

@@ -10,7 +10,7 @@
 {{-- Bloque Izquierdo: Título + Descripción + Contador --}}
         <div class="col-md-8 d-flex align-items-center">
             <div class="me-4">
-                <h2 class="fw-bold text-dark mb-0">Catálogo de Capacitaciones</h2>
+                <h2 class="fw-bold text-dark mb-0">Capacitaciones</h2>
                 <p class="text-muted mb-0 small">Visualizando la programación oficial del <strong>Ciclo Fiscal {{ date('Y') }}</strong></p>
             </div>
 
@@ -40,6 +40,27 @@
         </div>
     </div>
 
+    {{-- █ MOTOR DE NOTIFICACIONES DINÁMICAS (PLATINUM FEEDBACK) █ --}}
+    <div class="row">
+        <div class="col-12 col-md-8 col-lg-6 mx-auto">
+            @foreach (['success', 'danger', 'warning', 'info'] as $msg)
+                @if(session()->has($msg))
+                    <div class="alert alert-{{ $msg }} alert-dismissible fade show shadow-sm rounded-4 border-0 mb-4" role="alert">
+                        <div class="d-flex align-items-center">
+                            {{-- Iconografía Dinámica según el tipo de respuesta --}}
+                            <i class="bi {{ $msg == 'success' ? 'bi-check-circle-fill' : ($msg == 'danger' ? 'bi-exclamation-octagon-fill' : 'bi-info-circle-fill') }} fs-4 me-3"></i>
+                            <div>
+                                <strong class="d-block">{{ $msg == 'success' ? '¡Operación Exitosa!' : 'Aviso del Sistema' }}</strong>
+                                <span class="small">{{ session($msg) }}</span>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" data-bs-dismiss="alert"></button>
+                    </div>
+                @endif
+            @endforeach
+        </div>
+    </div>
+
     {{-- BARRA DE BÚSQUEDA --}}
     <div class="row mb-4">
         <div class="col-12 col-md-8 col-lg-6 mx-auto">
@@ -66,7 +87,7 @@
             <div class="col-12 text-center py-5">
                 <i class="bi bi-clipboard-x text-muted opacity-25" style="font-size: 5rem;"></i>
                 <h4 class="text-muted fw-bold">Sin Programación Vigente</h4>
-                <a href="{{ route('dashboard') }}" class="btn btn-guinda rounded-pill px-5 py-2 shadow-sm">IR AL DASHBOARD</a>
+                {{--<a href="{{ route('dashboard') }}" class="btn btn-guinda rounded-pill px-5 py-2 shadow-sm">IR AL DASHBOARD</a>--}}
             </div>
         @endforelse
     </div>
