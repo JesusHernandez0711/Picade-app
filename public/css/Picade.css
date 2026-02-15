@@ -1,14 +1,15 @@
 /**
  * ══════════════════════════════════════════════════════════════════════════
- * PICADE — ESTILOS GLOBALES
+ * PICADE — ESTILOS GLOBALES (MASTER SHEET)
  * ══════════════════════════════════════════════════════════════════════════
  *
- * UBICACIÓN:  public/css/picade.css
+ * UBICACIÓN:  public/css/Picade.css
  * CARGADO EN: layouts/Auth.blade.php  +  layouts/Panel.blade.php
  *
  * Todo estilo reutilizable entre vistas vive aquí.
- * Los <style> inline de cada Blade solo deben tener CSS
- * MUY específico de esa vista (y que no se use en ningún otro lugar).
+ * SECCIONES:
+ * 1-13: Componentes UI Generales (Botones, Inputs, Textos)
+ * 14-19: Arquitectura del Panel (Sidebar, Header, Layout)
  * ══════════════════════════════════════════════════════════════════════════
  */
 
@@ -16,16 +17,24 @@
    1. VARIABLES — Paleta Gobierno de México 2024-2030
    ══════════════════════════════════════════════════════════════════════════ */
 :root {
-    --gob-negro:     #161a1d;
-    --gob-guinda:    #9b2247;
-    --gob-verde:     #1e5b4f;
-    --gob-dorado:    #a57f2c;
-    --gob-gris:      #98989A;
-    --gob-guinda-dk: #611232;
-    --gob-verde-dk:  #002f2a;
-    --gob-crema:     #e6d194;
-    --picade-guinda: #731834;
-    --picade-dorado: #bfa15f;
+    /* Paleta Institucional */
+    --gob-negro:      #161a1d;
+    --gob-guinda:     #9b2247;
+    --gob-verde:      #1e5b4f;
+    --gob-dorado:     #a57f2c;
+    --gob-gris:       #98989A;
+    --gob-guinda-dk:  #611232;
+    --gob-verde-dk:   #002f2a;
+    --gob-crema:      #e6d194;
+    
+    /* Identidad PICADE */
+    --picade-guinda:  #731834;
+    --picade-dorado:  #bfa15f;
+    --picade-dark:    #1e1e2d;  /* Agregado para Sidebar */
+    
+    /* Dimensiones Layout */
+    --sidebar-width:  256px;
+    --header-height:  64px;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -216,6 +225,8 @@
    12. UTILIDADES
    ══════════════════════════════════════════════════════════════════════════ */
 .cursor-help { cursor: help; }
+.hover-scale { transition: transform 0.2s; }
+.hover-scale:hover { transform: scale(1.02); cursor: pointer; }
 
 /* ══════════════════════════════════════════════════════════════════════════
    13. PIE INSTITUCIONAL
@@ -228,4 +239,308 @@
     letter-spacing: 0.05em;
     margin-top: 1.5rem;
     user-select: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   14. ESTRUCTURA PRINCIPAL (Panel Layout)
+   ══════════════════════════════════════════════════════════════════════════ */
+body {
+    background-color: #ebedef;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    overflow-x: hidden;
+    margin: 0;
+}
+
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    transition: margin-left 0.3s ease;
+    margin-left: 0; /* Inicia sin margen (Sidebar cerrado) */
+}
+
+/* En escritorio, si el sidebar se abre, empuja el contenido */
+@media (min-width: 992px) {
+    .sidebar.show ~ .wrapper { 
+        margin-left: var(--sidebar-width); 
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   15. SIDEBAR (NAVEGACIÓN LATERAL)
+   ══════════════════════════════════════════════════════════════════════════ */
+.sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    position: fixed;
+    top: 0; 
+    left: calc(var(--sidebar-width) * -1); /* Inicia OCULTO a la izquierda */
+    background-color: var(--picade-dark);
+    color: rgba(255, 255, 255, 0.87);
+    transition: left 0.3s ease;
+    z-index: 1040;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Clase activa para mostrar el Sidebar */
+.sidebar.show { 
+    left: 0; 
+}
+
+.sidebar-header {
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem;
+    background-color: rgba(0, 0, 0, 0.2);
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.nav-link {
+    color: rgba(255, 255, 255, 0.6);
+    padding: 0.8rem 1.5rem;
+    display: flex;
+    align-items: center;
+    transition: 0.2s;
+    text-decoration: none;
+}
+
+.nav-link:hover, .nav-link.active {
+    color: #fff;
+    background-color: rgba(255,255,255,0.05);
+}
+
+.nav-link i { margin-right: 1rem; font-size: 1.2rem; }
+
+.nav-title {
+    margin-top: 1rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 80%;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   16. HEADER (BARRA SUPERIOR)
+   ══════════════════════════════════════════════════════════════════════════ */
+.header {
+    height: var(--header-height);
+    background: #fff;
+    border-bottom: 1px solid #d8dbe0;
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem;
+    justify-content: space-between;
+}
+
+.header-toggler {
+    border: 0;
+    background: transparent;
+    color: #768192;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    transition: color 0.2s;
+}
+
+.header-toggler:hover { color: var(--picade-guinda); }
+
+.header-nav-icon {
+    font-size: 1.3rem;
+    color: #768192;
+    padding: 0.5rem;
+    position: relative;
+    text-decoration: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   17. DROPDOWNS PERSONALIZADOS (Notificaciones y Perfil)
+   ══════════════════════════════════════════════════════════════════════════ */
+.custom-dropdown-menu {
+    width: 350px;
+    padding: 0;
+    border-radius: 8px;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    border: 1px solid #d8dbe0;
+}
+
+.dropdown-header-label {
+    background: #f8f9fa;
+    padding: 12px 16px;
+    font-weight: bold;
+    font-size: 0.9rem;
+    color: #4f5d73;
+    border-bottom: 1px solid #d8dbe0;
+}
+
+.dropdown-scroll-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.dropdown-footer {
+    background: #f8f9fa;
+    border-top: 1px solid #d8dbe0;
+}
+
+.dropdown-item-custom {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f2f5;
+    display: flex;
+    align-items: flex-start;
+    text-decoration: none;
+    color: #4f5d73;
+    transition: background 0.2s;
+}
+
+.dropdown-item-custom:hover { background-color: #f0f2f5; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   18. OFFCANVAS (Menú Lateral Derecho)
+   ══════════════════════════════════════════════════════════════════════════ */
+.offcanvas-catalogs { 
+    background-color: #212529; 
+    color: white; 
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   19. RESPONSIVE UTILS
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 992px) {
+    /* En móvil, el sidebar siempre inicia oculto */
+    .sidebar { left: calc(var(--sidebar-width) * -1); }
+    /* Si se activa, se muestra sobre el contenido (z-index ya configurado en .sidebar) */
+    .sidebar.show { left: 0; }
+    /* El wrapper nunca se empuja en móvil */
+    .wrapper { margin-left: 0; }
+}
+/* ══════════════════════════════════════════════════════════════════════════
+    20. MATRIZ ACADÉMICA — COMPONENTES DINÁMICOS
+    ══════════════════════════════════════════════════════════════════════════ 
+    * @description: Control de visualización para el catálogo de cursos.
+    * @logic: Implementa el cambio de layout entre Grid y List View.
+    ══════════════════════════════════════════════════════════════════════════ */
+
+/* Contenedor de la vista de lista activa */
+.list-view-active .card-curso-wrapper {
+    transition: all 0.3s ease;
+}
+
+/* Transformación de la tarjeta a modo horizontal */
+.list-view-active .card-curso-wrapper .card {
+    flex-direction: row !important;
+    align-items: stretch;
+    min-height: 250px;
+}
+
+/* Ajuste de la cabecera en modo lista */
+.list-view-active .card-curso-wrapper .card-header {
+    width: 25%;
+    min-width: 180px;
+    border-bottom: none !important;
+    border-right: 4px solid var(--gob-dorado); 
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background-color: #f8f9fa !important;
+}
+
+/* Ajuste del cuerpo en modo lista */
+.list-view-active .card-curso-wrapper .card-body {
+    width: 75%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    padding: 1.5rem 2rem !important;
+}
+
+/* Reorganización interna en modo lista */
+.list-view-active .card-curso-wrapper .card-body .bg-light {
+    grid-column: 1 / 2;
+    margin-bottom: 0 !important;
+    align-self: center;
+}
+
+.list-view-active .card-curso-wrapper .card-body .mb-4:has(.section-title) {
+    grid-column: 2 / 3;
+    margin-bottom: 0 !important;
+}
+
+.list-view-active .card-curso-wrapper .card-body .border-top {
+    grid-column: 1 / 2;
+    margin-top: 0 !important;
+    padding-top: 1rem !important;
+}
+
+.list-view-active .card-curso-wrapper .card-body .mb-4:has(.progress) {
+    grid-column: 2 / 3;
+    margin-bottom: 0 !important;
+}
+
+.list-view-active .card-curso-wrapper .card-body .d-grid {
+    grid-column: 1 / 3;
+    margin-top: 1rem;
+}
+
+/* Responsividad en modo lista */
+@media (max-width: 992px) {
+    .list-view-active .card-curso-wrapper .card { flex-direction: column !important; }
+    .list-view-active .card-curso-wrapper .card-header {
+        width: 100%;
+        border-right: none !important;
+        border-bottom: 4px solid var(--gob-dorado) !important;
+    }
+    .list-view-active .card-curso-wrapper .card-body {
+        width: 100%;
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+    21. TRANSICIONES DE FILTRADO Y BÚSQUEDA
+    ══════════════════════════════════════════════════════════════════════════ */
+.card-curso-wrapper {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+#inputBusquedaCursos:focus {
+    border-color: var(--gob-guinda) !important;
+    box-shadow: 0 0 0 0.25rem rgba(155, 34, 71, 0.15);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+    22. UTILIDADES DE IDENTIDAD (COLOR & SEMÁNTICA)
+    ══════════════════════════════════════════════════════════════════════════ 
+    * @description: Clases de utilidad para aplicar la paleta institucional 
+    * a elementos que no son botones (Badges, Alertas, Bordes).
+    ══════════════════════════════════════════════════════════════════════════ */
+
+/* Texto Guinda Institucional */
+.text-guinda {
+    color: var(--gob-guinda) !important;
+}
+
+/* Fondo Guinda Suave (Ideal para Badges/Contadores) */
+.bg-guinda-light {
+    background-color: rgba(155, 34, 71, 0.1) !important;
+}
+
+/* Borde Guinda */
+.border-guinda {
+    border-color: var(--gob-guinda) !important;
+}
+
+/* Fondo Guinda Sólido */
+.bg-guinda {
+    background-color: var(--gob-guinda) !important;
+    color: white !important;
+}
+
+/* Efecto de Brillo para Badges */
+.badge.bg-guinda-light {
+    letter-spacing: 0.5px;
+    font-weight: 700;
 }

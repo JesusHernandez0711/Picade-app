@@ -70,12 +70,12 @@ class RegisterController extends Controller
            No toca la BD — es instantánea.
            ======================================================================================== */
         $request->validate([
-            'ficha'             => ['required', 'string', 'max:50'],
+            'ficha'             => ['required', 'string', 'max:10'],
             'email'             => ['required', 'string', 'email', 'max:255'],
             'password'          => ['required', 'string', 'min:8', 'confirmed'],
-            'nombre'            => ['required', 'string', 'max:255'],
-            'apellido_paterno'  => ['required', 'string', 'max:255'],
-            'apellido_materno'  => ['required', 'string', 'max:255'],
+            'nombre'            => ['required', 'string', 'max:100'],
+            'apellido_paterno'  => ['required', 'string', 'max:100'],
+            'apellido_materno'  => ['required', 'string', 'max:100'],
             'fecha_nacimiento'  => ['required', 'date'],
             'fecha_ingreso'     => ['required', 'date'],
         ], [
@@ -117,16 +117,16 @@ class RegisterController extends Controller
              [409-B] → Duplicado INACTIVO (existe pero cuenta desactivada, contactar admin)
              [409]   → Concurrencia (otro usuario registró los mismos datos al mismo tiempo)
            ======================================================================================== */
-        try {
-            $resultado = DB::select('CALL SP_RegistrarUsuarioNuevo(?, ?, ?, ?, ?, ?, ?, ?)', [
-                $request->ficha,
-                $request->email,
-                Hash::make($request->password),     // Bcrypt hash — el SP NUNCA recibe texto plano
-                $request->nombre,
-                $request->apellido_paterno,
-                $request->apellido_materno,
-                $request->fecha_nacimiento,
-                $request->fecha_ingreso,
+        //try {
+                $resultado = DB::select('CALL SP_RegistrarUsuarioNuevo(?, ?, ?, ?, ?, ?, ?, ?)', [
+                trim($request->ficha),                                  // 1. _Ficha
+                mb_strtoupper(trim($request->email), 'UTF-8'),           // 2. _Email
+                Hash::make($request->password),                         // 3. _Contrasena
+                mb_strtoupper(trim($request->nombre), 'UTF-8'),          // 4. _Nombre
+                mb_strtoupper(trim($request->apellido_paterno), 'UTF-8'),// 5. _Apellido_Paterno
+                mb_strtoupper(trim($request->apellido_materno), 'UTF-8'),// 6. _Apellido_Materno
+                $request->fecha_nacimiento,                             // 7. _Fecha_Nacimiento
+                $request->fecha_ingreso,                                // 8. _Fecha_Ingreso
             ]);
 
             /* ====================================================================================
@@ -145,13 +145,17 @@ class RegisterController extends Controller
 
             if ($usuario) {
                 Auth::login($usuario);
+
+                // DISPARO DE EVENTO REGISTRO (Activa flujo de verificación email)
+                event(new \Illuminate\Auth\Events\Registered($usuario));
+
                 $request->session()->regenerate();
             }
 
             return redirect('/dashboard')
-                ->with('success', '¡Bienvenido! Tu cuenta ha sido creada exitosamente.');
+                ->with('success', '¡Bienvenido! Tu cuenta ha sido creada exitosamente. Verifique su correo electrónico.');
 
-        } catch (\Illuminate\Database\QueryException $e) {
+        /*} catch (\Illuminate\Database\QueryException $e) {
             /* ====================================================================================
                ERROR: El SP lanzó un SIGNAL (SQLSTATE 45000)
                
@@ -168,7 +172,7 @@ class RegisterController extends Controller
                  [400]   → Alerta DANGER   (roja):     Error de validación (fecha, edad, campos).
                  [409]   → Alerta WARNING  (amarilla): Concurrencia, pedir que reintente.
                  Otro    → Alerta DANGER   (roja):     Error técnico inesperado.
-               ==================================================================================== */
+               ==================================================================================== 
 
             $mensajeSP = $this->extraerMensajeSP($e->getMessage());
             $tipoAlerta = $this->clasificarAlerta($mensajeSP);
@@ -176,7 +180,7 @@ class RegisterController extends Controller
             return back()
                 ->withInput()
                 ->with($tipoAlerta, $mensajeSP);
-        }
+        }*/
     }
 
     /**

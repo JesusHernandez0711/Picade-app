@@ -1,135 +1,147 @@
 <?php
 
-/*
-|--------------------------------------------------------------------------
-| 1. IMPORTACIÓN DE CONTROLADORES Y FACADES
-|--------------------------------------------------------------------------
-| Aquí importamos las clases necesarias para manejar la lógica de las rutas.
-| Laravel 12+ requiere importar los controladores explícitamente.
-*/
+/**
+ * █ SISTEMA DE RUTAS MAESTRAS - PLATAFORMA PICADE
+ * ─────────────────────────────────────────────────────────────────────────────────────────────
+ * @project     PICADE (Plataforma Integral de Capacitación y Desarrollo)
+ * @version     4.0.0 (Build: Platinum Forensic Standard)
+ * @security    ISO/IEC 27001 - Layer 7 (Application Routing Protection)
+ * @author      División de Desarrollo Tecnológico & Seguridad de la Información
+ * * █ FILOSOFÍA DE ENRUTAMIENTO:
+ * Implementamos un modelo Híbrido:
+ * 1. RESTFUL RESOURCES: Para gestión masiva y administrativa (CRUD).
+ * 2. EXPLICIT CONTROLLER GROUPS: Para flujos de identidad sensible (IMC) y Dashboard.
+ * 3. AJAX/API PREFIXING: Para servicios de hidratación reactiva de formularios.
+ */
+
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\DashboardController;  // Lógica de gráficas y KPIs
-use App\Http\Controllers\UsuarioController;    // Lógica CRUD de usuarios y Perfil
-use App\Http\Controllers\CatalogoController;   // Lógica de cascadas AJAX (Estados, Municipios, etc.)
-use App\Http\Controllers\NotificationController; // (Futuro) Lógica de Logs
-use App\Http\Controllers\MessageController;      // (Futuro) Lógica de Soporte
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\UsuarioController;
+use App\Http\Controllers\CatalogoController;
 
 /*
 |--------------------------------------------------------------------------
-| 2. GESTIÓN DE ACCESO INICIAL (ROOT)
+| 1. GESTIÓN DE ACCESO INICIAL (GATEWAY)
 |--------------------------------------------------------------------------
-| Redirección inteligente:
-| - Si el usuario ya inició sesión -> Lo manda al Dashboard.
-| - Si es un visitante -> Lo manda al Login.
+| Redirección inteligente basada en estado de sesión.
 */
 Route::get('/', function () {
     return Auth::check() ? redirect('/dashboard') : redirect('/login');
 });
 
-/*
-|--------------------------------------------------------------------------
-| 3. RUTAS DE AUTENTICACIÓN (Librería UI/Auth)
-|--------------------------------------------------------------------------
-| 'verify' => true: Habilita las rutas internas para la verificación de correo.
-| Esto genera automáticamente: /login, /logout, /register, /password/reset, etc.
-*/
+/** * RUTAS DE AUTENTICACIÓN (Librería UI) 
+ * Implementa el protocolo de verificación de doble paso vía Email.
+ */
 Auth::routes(['verify' => true]);
 
 /*
 |==========================================================================
-| 4. ECOSISTEMA PROTEGIDO (Requiere Login + Correo Verificado)
+| 2. ECOSISTEMA PROTEGIDO (CERTIFIED AREA)
 |==========================================================================
-| Todas las rutas dentro de este grupo requieren que el usuario haya pasado
-| por el Login y haya verificado su email. Si no, Laravel lo expulsa.
+| Barrera de Seguridad: Requiere Token de Sesión + Email Verificado.
 */
 Route::middleware(['auth', 'verified'])->group(function () {
 
     /* --------------------------------------------------------------------
-       A. MÓDULO DE DASHBOARD (Panel de Control)
+       A. MÓDULO DE DASHBOARD (ORQUESTADOR OPERATIVO)
+       ────────────────────────────────────────────────────────────────────
+       Mapea las vistas de control y telemetría del sistema.
        -------------------------------------------------------------------- */
-    
-    // Vista Principal: Carga la vista según el rol (Admin, Instructor, Alumno)
-    Route::get('/dashboard', [DashboardController::class, 'index'])
-        ->name('dashboard');
+    Route::controller(DashboardController::class)->group(function () {
+        
+        // Vista Principal: Despacho por Rol (Admin/Instr/Part) con Peaje de Perfil
+        Route::get('/dashboard', 'index')->name('dashboard');
 
-    // API Tiempo Real: Endpoint JSON para refrescar contadores y gráficas cada 5s
-    Route::get('/dashboard/data', [DashboardController::class, 'getDashboardData'])
-        ->name('dashboard.data');
+        // API de Telemetría: Endpoint JSON para refrescar KPIs y salud de CPU/RAM cada 5s
+        Route::get('/dashboard/data', 'getDashboardData')->name('dashboard.data');
+
+        // Matriz Académica: Carga masiva de cursos del año fiscal actual (Consumo de SP)
+        Route::get('/oferta-academica', 'ofertaAcademica')->name('cursos.matriz');
+    
+    // █ AGREGA ESTA LÍNEA PARA EVITAR EL ERROR █
+        // Por ahora la mandamos a una función que crearemos en el controlador
+        Route::get('/inscripcion/{id}', 'solicitarInscripcion')->name('cursos.inscripcion');
+
+    // █ RUTA PARA EL PROCESO DE INSCRIPCIÓN █
+        // Esta es la que falta para que el Modal funcione
+        Route::post('/inscripcion/confirmar', 'confirmarInscripcion')
+            ->name('cursos.inscripcion.confirmar');
+
+    });
 
 
     /* --------------------------------------------------------------------
-       B. MÓDULO DE PERFIL PERSONAL (Auto-gestión)
+       B. MÓDULO DE IDENTIDAD (IMC - IDENTITY MASTER CONTROL)
+       ────────────────────────────────────────────────────────────────────
+       Transacciones atómicas sobre el expediente digital propio.
+       Protección IDOR: No reciben ID por URL; consumen estrictamente Auth::id().
        -------------------------------------------------------------------- */
-    
-    // Ver mi propio perfil (Vista con datos de Info_Personal)
-    Route::get('/perfil', [UsuarioController::class, 'perfil'])
-        ->name('perfil');
+    Route::controller(UsuarioController::class)->group(function () {
+        
+        // █ FLUJO DE INTEGRIDAD (ONBOARDING)
+        // Peaje obligatorio para completar Gerencia, Puesto y Centro de Trabajo.
+        Route::get('/completar-perfil', 'vistaCompletar')->name('perfil.completar');
+        Route::post('/completar-perfil', 'guardarCompletado')->name('perfil.guardar_completado');
 
-    // Actualizar datos generales (Nombre, Dirección, etc.)
-    Route::put('/perfil/actualizar', [UsuarioController::class, 'actualizarPerfil'])
-        ->name('perfil.actualizar');
+        // █ AUTO-GESTIÓN DE PERFIL
+        // Consulta y edición de datos personales (Hidratación vía SP)
+        Route::get('/perfil', 'perfil')->name('perfil');
+        Route::put('/perfil/actualizar', 'actualizarPerfil')->name('perfil.actualizar');
 
-    // Actualizar credenciales sensibles (Email y Contraseña)
-    Route::put('/perfil/credenciales', [UsuarioController::class, 'actualizarCredenciales'])
-        ->name('perfil.credenciales');
+        // █ SEGURIDAD DE CREDENCIALES
+        // Transacción de alto riesgo para cambio de Email y Password hasheada
+        Route::put('/perfil/credenciales', 'actualizarCredenciales')->name('perfil.credenciales');
+
+    });
 
 
     /* --------------------------------------------------------------------
-       C. CENTRO DE COMUNICACIONES (Header)
+       C. GESTIÓN ADMINISTRATIVA DE CAPITAL HUMANO
+       ────────────────────────────────────────────────────────────────────
+       Mapeo RESTful para el control total del directorio de usuarios.
+       Exclusivo para el ROL ADMINISTRADOR (1).
        -------------------------------------------------------------------- */
     
-    // Historial de Notificaciones (Log del Sistema)
-    // TODO: Crear NotificationController para manejar lógica real
-    Route::get('/notificaciones', function() { return view('notificaciones.index'); })
-        ->name('notificaciones.index');
-
-    // Centro de Mensajes (Soporte Técnico / Tickets)
-    // TODO: Crear MessageController para manejar lógica real
-    Route::get('/mensajes', function() { return view('mensajes.index'); })
-        ->name('mensajes.index');
-
-
-    /* --------------------------------------------------------------------
-       D. MÓDULO ADMINISTRATIVO DE USUARIOS (CRUD)
-       -------------------------------------------------------------------- */
-    
-    // Recurso completo para gestión de usuarios (Index, Create, Store, Edit, Update, Destroy)
-    // Mapea automáticamente a los métodos del UsuarioController.
+    // CRUD Masivo: index, create, store, show, edit, update, destroy
     Route::resource('usuarios', UsuarioController::class);
 
-    // Ruta personalizada para el Switch de Activo/Inactivo (AJAX o Form)
-    // Permite "Baja Lógica" sin borrar el registro.
+    // Baja Lógica: Interruptor AJAX para Estatus Activo/Inactivo (Soft Delete)
     Route::patch('/usuarios/{id}/estatus', [UsuarioController::class, 'cambiarEstatus'])
         ->name('usuarios.estatus');
 
 
     /* --------------------------------------------------------------------
-       E. API INTERNA DE CATÁLOGOS (Cascadas AJAX)
-       --------------------------------------------------------------------
-       Estas rutas alimentan los <select> dependientes en los formularios.
-       Ej: Al seleccionar un País, JS llama a /estados/{id} para llenar el siguiente combo.
-       -------------------------------------------------------------------- */
+       D. CENTRO DE COMUNICACIONES Y ARCHIVO
+       ──────────────────────────────────────────────────────────────────── */
+    
+    // Mi Kárdex: Consulta de historial académico y descargas DC-3
+    Route::get('/mi-historial', function() { return view('panel.participant.kardex'); })
+        ->name('perfil.kardex');
+
+    // Notificaciones: Bitácora de eventos y logs del sistema
+    Route::get('/notificaciones', function() { return view('notificaciones.index'); })
+        ->name('notificaciones.index');
+
+    // Mensajes: Centro de soporte y tickets técnicos
+    Route::get('/mensajes', function() { return view('mensajes.index'); })
+        ->name('mensajes.index');
+
+
     /* --------------------------------------------------------------------
-       E. API INTERNA DE CATÁLOGOS (Cascadas AJAX)
-       --------------------------------------------------------------------
-       Estas rutas son consumidas por 'Picade.js' para llenar los selects.
-       El prefijo 'api/catalogos' asegura que no choquen con otras rutas.
+       E. API INTERNA DE CATÁLOGOS (ADSCRIPCIÓN REACTIVA)
+       ────────────────────────────────────────────────────────────────────
+       Rutas de servicio para la hidratación de cascadas en formularios Smart.
+       Consumidas por 'Picade.js' vía Fetch API.
        -------------------------------------------------------------------- */
     Route::prefix('api/catalogos')->group(function () {
         
-        // 1. CASCADA GEOGRÁFICA
-        // JS llama a: /api/catalogos/estados/1
+        // Cascadas Geográficas (País -> Estado -> Municipio)
         Route::get('/estados/{idPais}', [CatalogoController::class, 'estadosPorPais']);
-        
-        // JS llama a: /api/catalogos/municipios/5
         Route::get('/municipios/{idEstado}', [CatalogoController::class, 'municipiosPorEstado']);
         
-        // 2. CASCADA ORGANIZACIONAL (PEMEX)
-        // JS llama a: /api/catalogos/subdirecciones/3
+        // Cascadas Organizacionales PEMEX (Dirección -> Sub -> Gerencia)
         Route::get('/subdirecciones/{idDireccion}', [CatalogoController::class, 'subdireccionesPorDireccion']);
-        
-        // JS llama a: /api/catalogos/gerencias/8
         Route::get('/gerencias/{idSubdireccion}', [CatalogoController::class, 'gerenciasPorSubdireccion']);
     });
 });

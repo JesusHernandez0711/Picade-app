@@ -43,12 +43,16 @@ class LoginController extends Controller
      *    Si el hash no coincide -> error genérico (no revelamos que la cuenta sí existe).
      * 7. Si todo pasa: regenera sesión y redirige según el rol.
      */
-    public function login(Request $request)
+    /*public function login(Request $request)
     {
         // 1. Validación básica de entrada
         $request->validate([
             'credencial' => ['required', 'string'],
             'password'   => ['required', 'string'],
+        ], [
+            // Aquí definimos los mensajes manualmente
+            'credencial.required' => 'El campo usuario o ficha es obligatorio.',
+            'password.required'   => 'La contraseña es obligatoria.',
         ]);
 
         // 2. Detección automática: ¿Email o Ficha?
@@ -84,11 +88,53 @@ class LoginController extends Controller
         //    Hash::check() compara el texto plano contra el hash bcrypt
         //    almacenado en la columna 'Contraseña' (vía getAuthPassword() del modelo).
         //    Mensaje genérico: no revelamos que la cuenta sí existe.
-        if (!Hash::check($request->password, $usuario->getAuthPassword())) {
+        // 6. CAPA 3: Verificación Híbrida (Hash vs Texto Plano)
+        $passwordBd = $usuario->getAuthPassword(); // La contraseña que está en la base de datos
+        $esValido = false;
+        $requiereEncriptar = false;
+
+        // --- EL ESCUDO ---
+        // Verificamos si parece un hash (los hashes de Laravel siempre empiezan con $)
+        $esHashValido = !empty($passwordBd) && str_starts_with($passwordBd, '$');
+
+        // A) INTENTO 1: ¿Es un Hash seguro (Bcrypt)?
+        // Esto es lo estándar. Si ya está encriptada, entra aquí.
+        if (Hash::check($request->password, $passwordBd)) {
+            $esValido = true;
+            // Verificamos si el algoritmo necesita actualización (mantenimiento interno)
+            if (Hash::needsRehash($passwordBd)) {
+                $requiereEncriptar = true;
+            }
+        } 
+        // B) INTENTO 2: ¿Es texto plano (Legacy/Antiguo)?
+        // AQUÍ ESTÁ LA SOLUCIÓN AL ERROR: Comparamos el texto tal cual.
+        // Si la contraseña en BD es "Amorcito51." y el usuario escribió "Amorcito51.", entra.
+        elseif ($request->password === $passwordBd) {
+            $esValido = true;
+            $requiereEncriptar = true; // ¡IMPORTANTE! Marcar para encriptar inmediatamente.
+        }
+
+        // Si fallaron ambos intentos, adiós.
+        if (!$esValido) {
             return back()->withErrors([
                 'credencial' => 'Credenciales incorrectas.',
             ])->onlyInput('credencial');
         }
+
+        // 7. AUTO-MIGRACIÓN DE SEGURIDAD
+        // Si detectamos que era texto plano (Intento 2), la encriptamos AHORA MISMO.
+        // Así, la próxima vez entrará por el Intento 1 y ya será seguro.
+        if ($requiereEncriptar) {
+            $usuario->Contraseña = Hash::make($request->password);
+            $usuario->save(); 
+        }
+
+        // 8. TODO PASÓ: Autenticar y regenerar sesión (Igual que antes)
+        $remember = $request->boolean('recordar');
+        Auth::login($usuario, $remember);
+        $request->session()->regenerate();
+
+        return redirect()->intended('/dashboard');
 
         // 7. TODO PASÓ: Autenticar manualmente y regenerar sesión
         //    Auth::login() registra al usuario en la sesión de Laravel.
@@ -101,6 +147,94 @@ class LoginController extends Controller
         //return redirect()->intended($this->rutaPorRol());
         // 8. REDIRECCIÓN MAESTRA (Aquí estaba tu error de sintaxis)
         // Simplemente redirigimos a /dashboard. El DashboardController se encarga del resto.
+        return redirect()->intended('/dashboard');
+    }*/
+
+/**
+     * Procesa la autenticación del usuario.
+     *
+     * FLUJO DE VERIFICACIÓN (ESTÁNDAR PLATINUM FORENSIC):
+     * 1. VALIDACIÓN: Integridad de campos requeridos.
+     * 2. DETECCIÓN: Identificación de canal (Email vs Ficha).
+     * 3. BÚSQUEDA: Recuperación de registro en BD (Usuarios).
+     * 4. CAPA 1 (EXISTENCIA): Verificación de presencia del registro.
+     * 5. CAPA 2 (ESTATUS): Validación de bit de actividad (Baja lógica).
+     * 6. CAPA 3 (AUTENTICACIÓN HÍBRIDA): 
+     * A) Verificación de Texto Plano (Legacy): Prioritaria para evitar excepciones de motor Hash.
+     * B) Verificación de Hash (Bcrypt): Procesamiento estándar de Laravel.
+     * 7. AUTO-MIGRACIÓN: Encriptación inmediata de credenciales legacy tras éxito.
+     * 8. SESIÓN: Autenticación de estado, regeneración de ID y redirección maestra.
+     */
+    public function login(Request $request)
+    {
+        // 1. Validación básica de entrada con mensajes en español
+        $request->validate([
+            'credencial' => ['required', 'string'],
+            'password'   => ['required', 'string'],
+        ], [
+            'credencial.required' => 'El campo usuario o ficha es obligatorio.',
+            'password.required'   => 'La contraseña es obligatoria.',
+        ]);
+
+        // 2. Detección automática de canal de acceso
+        $campo = filter_var($request->credencial, FILTER_VALIDATE_EMAIL) ? 'Email' : 'Ficha';
+
+        // 3. Recuperación del modelo de Usuario
+        $usuario = \App\Models\Usuario::where($campo, $request->credencial)->first();
+
+        // 4. CAPA 1: Validación de Existencia
+        if (!$usuario) {
+            return back()->withErrors(['credencial' => 'Credenciales incorrectas.'])->onlyInput('credencial');
+        }
+
+        // 5. CAPA 2: Validación de Estatus Activo
+        if (!$usuario->Activo) {
+            return back()->withErrors([
+                'credencial' => 'Su cuenta ha sido desactivada. Contacte al administrador del sistema para reactivar su acceso.'
+            ])->onlyInput('credencial');
+        }
+
+        // 6. CAPA 3: Verificación Híbrida Blindada
+        $passwordBd = $usuario->getAuthPassword(); 
+        $esValido = false;
+        $requiereEncriptar = false;
+
+        // A) INTENTO 1: Texto Plano (Legacy) 
+        // Se evalúa primero para prevenir RuntimeException en motores estrictos de Bcrypt
+        if (!empty($passwordBd) && $request->password === $passwordBd) {
+            $esValido = true;
+            $requiereEncriptar = true; 
+        } 
+        // B) INTENTO 2: Hash Seguro (Bcrypt)
+        // Solo se ejecuta si el valor en BD cumple con el formato de Hash ($)
+        elseif (!empty($passwordBd) && str_starts_with($passwordBd, '$')) {
+            if (Hash::check($request->password, $passwordBd)) {
+                $esValido = true;
+                // Verificación de mantenimiento de Hash (Necesidad de Rehash)
+                if (Hash::needsRehash($passwordBd)) {
+                    $requiereEncriptar = true;
+                }
+            }
+        }
+
+        // Validación final de éxito en autenticación
+        if (!$esValido) {
+            return back()->withErrors(['credencial' => 'Credenciales incorrectas.'])->onlyInput('credencial');
+        }
+
+        // 7. AUTO-MIGRACIÓN DE SEGURIDAD (Transparente al usuario)
+        // Convierte el texto plano detectado en un Hash Bcrypt seguro
+        if ($requiereEncriptar) {
+            $usuario->Contraseña = Hash::make($request->password);
+            $usuario->save(); 
+        }
+
+        // 8. AUTENTICACIÓN Y PERSISTENCIA DE SESIÓN
+        $remember = $request->boolean('recordar');
+        Auth::login($usuario, $remember);
+        $request->session()->regenerate();
+
+        // Redirección maestra al controlador de Dashboard (Maneja roles internos)
         return redirect()->intended('/dashboard');
     }
 

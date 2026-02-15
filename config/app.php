@@ -65,7 +65,8 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    //'timezone' => 'UTC',
+    'timezone' => 'America/Mexico_City',  // <--- CAMBIO 1 (Antes decía 'UTC')
 
     /*
     |--------------------------------------------------------------------------
@@ -78,11 +79,15 @@ return [
     |
     */
 
-    'locale' => env('APP_LOCALE', 'en'),
+    //'locale' => env('APP_LOCALE', 'en'),
+
+    'locale' => env('APP_LOCALE', 'es'),  // <--- CAMBIO 2 (Antes decía 'en')
 
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
-    'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
+    //'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
+    
+    'faker_locale' => env('APP_FAKER_LOCALE', 'es_MX'), // <--- CAMBIO 3 (Antes 'en_US')
 
     /*
     |--------------------------------------------------------------------------

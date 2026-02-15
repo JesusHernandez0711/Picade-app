@@ -53,14 +53,21 @@ return [
             'password' => env('DB_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => env('DB_CHARSET', 'utf8mb4'),
-            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+            //'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+            // Cambiamos el default por el de tu base de datos:
+            'collation' => 'utf8mb4_spanish_ci',
             'prefix' => '',
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
+            /*'options' => extension_loaded('pdo_mysql') ? array_filter([
                 (PHP_VERSION_ID >= 80500 ? \Pdo\Mysql::ATTR_SSL_CA : \PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
+            ]) : [],*/
+
+            // 2. Opción Nuclear (Sin condiciones, forzosa)
+            'options' => [
+                \PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4 COLLATE utf8mb4_spanish_ci',
+            ],
         ],
 
         'mariadb' => [
@@ -73,14 +80,25 @@ return [
             'password' => env('DB_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => env('DB_CHARSET', 'utf8mb4'),
-            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+            //'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+            // █ AQUÍ ESTÁ LA SOLUCIÓN AL ERROR 1267 █
+            // Cambiamos el default por el de tu base de datos:
+            'collation' => 'utf8mb4_spanish_ci',
             'prefix' => '',
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
+            /*'options' => extension_loaded('pdo_mysql') ? array_filter([
                 (PHP_VERSION_ID >= 80500 ? \Pdo\Mysql::ATTR_SSL_CA : \PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
+            ]) : [],*/
+            // 2. AQUÍ AGREGAMOS LA ORDEN DE INICIALIZACIÓN (INIT_COMMAND)
+
+            // 2. VERSIÓN BLINDADA (Sin preguntas, solo órdenes)
+            // Quitamos el "extension_loaded" y el "array_filter".
+            // Así garantizamos que esta línea SIEMPRE se ejecute.
+            'options' => [
+                \PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4 COLLATE utf8mb4_spanish_ci',
+            ],
         ],
 
         'pgsql' => [

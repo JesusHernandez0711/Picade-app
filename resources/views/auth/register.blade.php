@@ -59,19 +59,32 @@
                     <div class="input-group">
                         <input type="password" class="form-control @error('password') is-invalid @enderror" 
                                id="password" name="password" placeholder="Mínimo 8 caracteres" required>
-                        <button class="btn btn-outline-secondary border-start-0" type="button" id="togglePass" style="border-color: #d1d5db;">
+                        {{--<button class="btn btn-outline-secondary border-start-0" type="button" id="togglePass" style="border-color: #d1d5db;">
                             <i class="bi bi-eye"></i>
+                        </button>  --}}
+                        {{-- 2. AQUÍ ES DONDE HACES EL CAMBIO (EL BOTÓN DEL OJO) --}}
+                        {{-- Solo asegúrate de que tenga la clase 'btn-toggle-pw' --}}
+                        <button type="button" class="btn-toggle-pw" id="togglePassword">
+                            <i class="bi bi-eye" id="eyeIcon"></i>
                         </button>
                         @error('password')
                             <div class="invalid-feedback d-block w-100">{{ $message }}</div>
                         @enderror
                     </div>
                 </div>
+
                 <div class="col-md-6">
                     <label for="password_confirmation" class="form-label">Confirmar Contraseña <span class="text-danger">*</span></label>
-                    <input type="password" class="form-control" 
-                           id="password_confirmation" name="password_confirmation" 
-                           placeholder="Repite la contraseña" required>
+                    <div class="input-group">
+                        <input type="password" class="form-control" 
+                            id="password_confirmation" name="password_confirmation" 
+                            placeholder="Repite la contraseña" required>
+                        
+                        {{-- Agregando el botón aquí también funciona automático --}}
+                        <button type="button" class="btn-toggle-pw">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -139,7 +152,7 @@
     </div>
 @endsection
 
-{{-- Script específico para esta vista (Toggle Password) --}}
+{{-- Script específico para esta vista (Toggle Password) 
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -157,4 +170,4 @@
         }
     });
 </script>
-@endpush
+@endpush--}}

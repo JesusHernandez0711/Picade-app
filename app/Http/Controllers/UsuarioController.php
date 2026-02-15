@@ -180,7 +180,6 @@ class UsuarioController extends Controller
         // 3. MOTOR DE ORDENAMIENTO (SORTING ENGINE)
         // Mapeo de opciones del frontend a columnas de BD
         // 3. MOTOR DE ORDENAMIENTO (SORTING ENGINE)
-// 3. MOTOR DE ORDENAMIENTO (SORTING ENGINE)
         $orden = $request->input('sort', 'rol'); // Cambiamos el default a 'rol' si prefieres esa vista inicial
 
         switch ($orden) {
@@ -268,7 +267,7 @@ class UsuarioController extends Controller
             // [Identificadores Únicos]
             // 'required': No puede estar vacío.
             // 'max:50': Previene ataques de desbordamiento de búfer en BD.
-            'ficha'             => ['required', 'string', 'max:50'],
+            'ficha'             => ['required', 'string', 'max:10'],
             
             // [Activos Multimedia]
             // 'image': Valida los "Magic Bytes" del archivo para asegurar que es una imagen real.
@@ -283,9 +282,9 @@ class UsuarioController extends Controller
             'password'          => ['required', 'string', 'min:8', 'confirmed'],
             
             // [Datos Personales]
-            'nombre'            => ['required', 'string', 'max:255'],
-            'apellido_paterno'  => ['required', 'string', 'max:255'],
-            'apellido_materno'  => ['required', 'string', 'max:255'],
+            'nombre'            => ['required', 'string', 'max:100'],
+            'apellido_paterno'  => ['required', 'string', 'max:100'],
+            'apellido_materno'  => ['required', 'string', 'max:100'],
             'fecha_nacimiento'  => ['required', 'date'],
             'fecha_ingreso'     => ['required', 'date'],
             
@@ -331,7 +330,7 @@ class UsuarioController extends Controller
         // ─────────────────────────────────────────────────────────────────────
         // FASE 3: EJECUCIÓN BLINDADA DE PROCEDIMIENTO ALMACENADO
         // ─────────────────────────────────────────────────────────────────────
-        //try {
+        try {
             // Definimos la sentencia SQL.
             // Usamos '?' (Placeholders) para evitar INYECCIÓN SQL. 
             // Laravel escapará automáticamente cualquier caracter malicioso.
@@ -345,18 +344,18 @@ class UsuarioController extends Controller
                 Auth::id(),                      // Obtenemos el ID del Admin logueado para trazar quién hizo el registro.
 
                 // [2] IDENTIDAD DIGITAL
-                $request->ficha,                 // Número de empleado.
+                trim($request->ficha),                 // Número de empleado.
                 $rutaFoto,                       // URL de la foto (o NULL). ESTA ES LA POSICIÓN 3 CORRECTA.
 
                 // [3] IDENTIDAD HUMANA
-                $request->nombre,                // Nombre de pila.
-                $request->apellido_paterno,      // Apellido Paterno.
-                $request->apellido_materno,      // Apellido Materno.
+                mb_strtoupper(trim($request->nombre), 'UTF-8'),                // Nombre de pila.
+                mb_strtoupper(trim($request->apellido_paterno), 'UTF-8'),      // Apellido Paterno.
+                mb_strtoupper(trim($request->apellido_materno), 'UTF-8'),      // Apellido Materno.
                 $request->fecha_nacimiento,      // Fecha nacimiento (Validación de edad en SP).
                 $request->fecha_ingreso,         // Fecha ingreso (Cálculo antigüedad en SP).
 
                 // [4] CREDENCIALES
-                $request->email,                 // Correo (Login).
+                mb_strtoupper(trim($request->email), 'UTF-8'),                 // Correo (Login).
                 Hash::make($request->password),  // ENCRIPTACIÓN: Convertimos "123456" en "$2y$10$..." (Irreversible).
 
                 // [5] ADSCRIPCIÓN (IDs numéricos)
@@ -369,8 +368,8 @@ class UsuarioController extends Controller
                 $request->id_gerencia,           // Gerencia.
 
                 // [6] METADATOS COMPLEMENTARIOS
-                $request->nivel,                 // Nivel salarial.
-                $request->clasificacion          // Clasificación.
+                mb_strtoupper(trim($request->nivel), 'UTF-8'),                 // Nivel salarial.
+                mb_strtoupper(trim($request->clasificacion), 'UTF-8')          // Clasificación.
             ]);
 
             // ─────────────────────────────────────────────────────────────────
@@ -381,7 +380,7 @@ class UsuarioController extends Controller
             return redirect()->route('usuarios.index')
                 ->with('success', 'Colaborador registrado exitosamente. ID: #' . ($resultado[0]->Id_Usuario ?? 'OK'));
 
-        /**} catch (\Illuminate\Database\QueryException $e) {
+        } catch (\Illuminate\Database\QueryException $e) {
             // ─────────────────────────────────────────────────────────────────
             // FASE 5: MANEJO DE EXCEPCIONES Y LIMPIEZA (ROLLBACK & CLEANUP)
             // ─────────────────────────────────────────────────────────────────
@@ -404,7 +403,7 @@ class UsuarioController extends Controller
             // 'withInput()' rellena los campos con lo que escribió (para que no tenga que escribir todo de nuevo).
             // 'with()' envía el mensaje de error para mostrar la alerta roja.
             return back()->withInput()->with($tipoAlerta, $mensajeSP);
-        }*/
+        }
     }
 
     /**
@@ -679,10 +678,10 @@ class UsuarioController extends Controller
     {
         // 1. Validación de campos permitidos
         $request->validate([
-            'ficha'             => ['required', 'string', 'max:50'],
-            'nombre'            => ['required', 'string', 'max:255'],
-            'apellido_paterno'  => ['required', 'string', 'max:255'],
-            'apellido_materno'  => ['required', 'string', 'max:255'],
+            'ficha'             => ['required', 'string', 'max:10'],
+            'nombre'            => ['required', 'string', 'max:100'],
+            'apellido_paterno'  => ['required', 'string', 'max:100'],
+            'apellido_materno'  => ['required', 'string', 'max:100'],
             'fecha_nacimiento'  => ['required', 'date'],
             'fecha_ingreso'     => ['required', 'date'],
             'id_regimen'        => ['required', 'integer', 'min:1'],
@@ -789,7 +788,7 @@ class UsuarioController extends Controller
         }
     }
 
-/* ========================================================================================
+    /* ========================================================================================
        █ SECCIÓN 3: GESTIÓN DE ESTATUS (BAJA LÓGICA / REACTIVACIÓN)
        ────────────────────────────────────────────────────────────────────────────────────────
        Métodos para el control del ciclo de vida del acceso del usuario.
@@ -942,4 +941,118 @@ class UsuarioController extends Controller
         // BLOQUEO / DENEGADA: Permisos insuficientes o reglas de seguridad
         return 'danger';
     }
+
+    /* ========================================================================================
+       █ SECCIÓN 4: ONBOARDING Y FLUJOS DE INTEGRIDAD (COMPLETAR PERFIL)
+       ────────────────────────────────────────────────────────────────────────────────────────
+       Zona de paso obligatorio para todos los usuarios (incluyendo Admin). 
+       Garantiza que el expediente digital esté completo antes de operar el sistema.
+       ======================================================================================== */
+
+    /**
+     * █ INTERFAZ DE COMPLETADO DE EXPEDIENTE (ONBOARDING)
+     * ─────────────────────────────────────────────────────────────────────────
+     * Prepara el entorno para que el usuario finalice su registro de adscripción.
+     * @data_context Consume SP_ConsultarPerfilPropio para la hidratación reactiva.
+     * @return \Illuminate\View\View Vista `panel.CompletarPerfil`.
+     */
+    public function vistaCompletar()
+    {
+        try {
+            // 1. Hidratación del Snapshot (Carga Ligera vía SP)
+            $resultado = DB::select('CALL SP_ConsultarPerfilPropio(?)', [Auth::id()]);
+            
+            if (empty($resultado)) {
+                return redirect('/login')->with('danger', 'Error de hidratación: Sesión inválida.');
+            }
+
+            $perfil = $resultado[0];
+
+            // 2. Carga de Catálogos Raíz (Regímenes, Puestos, Regiones, etc.)
+            $catalogos = $this->cargarCatalogos();
+
+            // Retornamos la vista física en resources/views/panel/CompletarPerfil.blade.php
+            return view('panel.CompletarPerfil', compact('perfil', 'catalogos'));
+
+        } catch (\Exception $e) {
+            return redirect('/dashboard')->with('danger', 'Error al inicializar el motor de integridad.');
+        }
+    }
+
+    /**
+     * █ MOTOR DE PERSISTENCIA DE ONBOARDING
+     * ─────────────────────────────────────────────────────────────────────────
+     * Procesa la actualización obligatoria consumiendo SP_EditarPerfilPropio.
+     * @param Request $request Payload con los 16 parámetros requeridos por el SP.
+     * @return \Illuminate\Http\RedirectResponse Redirección al Dashboard tras éxito.
+     */
+    public function guardarCompletado(Request $request)
+    {
+        // 1. Validación de Formato (Siguiendo tu estándar de actualizarPerfil)
+        $request->validate([
+            'ficha'            => ['required', 'string', 'max:10'],
+            'foto_perfil'      => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'], // █ CLAVE: Validar como imagen
+            'nombre'           => ['required', 'string', 'max:100'],
+            'apellido_paterno' => ['required', 'string', 'max:100'],
+            'apellido_materno' => ['required', 'string', 'max:100'],
+            'fecha_nacimiento' => ['required', 'date'],
+            'fecha_ingreso'    => ['required', 'date'],
+            'id_regimen'       => ['required', 'integer', 'min:1'],
+            'id_region'        => ['required', 'integer', 'min:1'],
+            'id_puesto'        => ['nullable', 'integer'],
+            'id_centro_trabajo'=> ['nullable', 'integer'],
+            'id_departamento'  => ['nullable', 'integer'],
+            'id_gerencia'      => ['nullable', 'integer'],
+            'nivel'            => ['nullable', 'string', 'max:50'],
+            'clasificacion'    => ['nullable', 'string', 'max:100'],
+        ]);
+
+        // 2. GESTIÓN DE ACTIVOS MULTIMEDIA (ASSET MANAGEMENT)
+        $rutaFoto = null;
+        if ($request->hasFile('foto_perfil')) {
+            // Generación de nombre único para evitar colisiones
+            $filename = time() . '_' . trim($request->ficha) . '.' . $request->file('foto_perfil')->getClientOriginalExtension();
+            $path = $request->file('foto_perfil')->storeAs('perfiles', $filename, 'public');
+            $rutaFoto = '/storage/' . $path;
+        }
+
+        try {
+            // 2. Ejecución Atómica (16 Parámetros en orden estricto)
+            $resultado = DB::select('CALL SP_EditarPerfilPropio(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                Auth::id(),                // 1. _Id_Usuario_Sesion
+                $request->ficha,           // 2. _Ficha
+                $rutaFoto,     // 3. _Url_Foto
+                $request->nombre,          // 4. _Nombre
+                $request->apellido_paterno, // 5. _Apellido_Paterno
+                $request->apellido_materno, // 6. _Apellido_Materno
+                $request->fecha_nacimiento, // 7. _Fecha_Nacimiento
+                $request->fecha_ingreso,    // 8. _Fecha_Ingreso
+                $request->id_regimen,      // 9. _Id_Regimen
+                $request->id_puesto ?? 0,  // 10. _Id_Puesto (Norm: 0 -> NULL)
+                $request->id_centro_trabajo ?? 0, // 11. _Id_CentroTrabajo
+                $request->id_departamento ?? 0,   // 12. _Id_Departamento
+                $request->id_region,       // 13. _Id_Region
+                $request->id_gerencia ?? 0, // 14. _Id_Gerencia
+                $request->nivel,           // 15. _Nivel
+                $request->clasificacion    // 16. _Clasificacion
+            ]);
+
+            $mensaje = $resultado[0]->Mensaje ?? 'Perfil activado correctamente.';
+            
+            // 3. Liberación: El usuario ya puede ver su Dashboard
+            return redirect()->route('dashboard')->with('success', $mensaje);
+
+        } catch (\Illuminate\Database\QueryException $e) {
+            // 4. FASE DE LIMPIEZA (ANTI-ZOMBIE CLEANUP)
+            // Si la base de datos falla (ej: ficha duplicada), borramos la foto que acabamos de subir.
+            if ($rutaFoto && file_exists(public_path($rutaFoto))) {
+                unlink(public_path($rutaFoto));
+            }
+
+            $mensajeSP = $this->extraerMensajeSP($e->getMessage());
+            $tipoAlerta = $this->clasificarAlerta($mensajeSP);
+            return back()->withInput()->with($tipoAlerta, $mensajeSP);
+        }
+    }
+
 }

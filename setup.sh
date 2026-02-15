@@ -25,9 +25,10 @@ echo "⏳ Esperando 30 segundos a que la Base de Datos arranque..."
 sleep 30
 
 # 3. Instalación de Dependencias
-echo "📦 Instalando dependencias (Composer y NPM)..."
+echo "📦 Instalando dependencias (Composer y NPM y TMUX)..."
 sudo docker exec -it PICADE_APP composer install
 sudo docker exec -it PICADE_APP npm install
+sudo apt install tmux
 
 # 4. Permisos de carpeta
 echo "🔑 Asignando permisos al usuario..."
@@ -50,7 +51,9 @@ sudo docker exec -it PICADE_APP php artisan route:clear
 
 # 9. Base de Datos: Destrucción y Creación
 echo "💥 Recreando Base de Datos (DROP & CREATE)..."
-sudo docker exec -it PICADE_DB mariadb -u root -pROOT_PICADE_USER_ADMIN -e "DROP DATABASE IF EXISTS PICADE; CREATE DATABASE PICADE;"
+#sudo docker exec -it PICADE_DB mariadb -u root -pROOT_PICADE_USER_ADMIN -e "DROP DATABASE IF EXISTS PICADE; CREATE DATABASE PICADE;"
+# █ CAMBIO: Agregamos CHARACTER SET y COLLATE para alinear con Laravel █
+sudo docker exec -it PICADE_DB mariadb -u root -pROOT_PICADE_USER_ADMIN -e "DROP DATABASE IF EXISTS PICADE; CREATE DATABASE PICADE CHARACTER SET utf8mb4 COLLATE utf8mb4_spanish_ci;"
 
 # 10 y 11. Claves y Migraciones Base
 echo "🔑 Generando Key y Estructura base..."
@@ -94,6 +97,14 @@ done
 # 14. Link de Almacenamiento
 echo "🔗 Creando Storage Link..."
 sudo docker exec -it PICADE_APP php artisan storage:link
+
+
+echo "🚮 Limpiando Cache..."
+docker compose exec app php artisan optimize:clear
+
+echo "💻 Reiniciar servidores..."
+docker exec -it PICADE_APP ./IniciarServers.sh
+
 
 echo "✅ ¡SISTEMA REINICIADO Y LISTO! 🚀"
 echo "   Accede a: http://localhost:8000"

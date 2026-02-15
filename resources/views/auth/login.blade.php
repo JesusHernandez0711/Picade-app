@@ -43,7 +43,12 @@
                 <div class="input-group input-glass {{ $errors->has('password') ? 'is-invalid' : '' }}">
                     <span class="input-group-text"><i class="bi bi-lock"></i></span>
                     <input type="password" name="password" id="password" class="form-control" placeholder="Contraseña" autocomplete="current-password" required>
-                    <button type="button" class="btn-toggle-pw" id="togglePassword"><i class="bi bi-eye" id="eyeIcon"></i></button>
+                    {{--<button type="button" class="btn-toggle-pw" id="togglePassword"><i class="bi bi-eye" id="eyeIcon"></i></button> --}}
+                    {{-- 2. AQUÍ ES DONDE HACES EL CAMBIO (EL BOTÓN DEL OJO) --}}
+                    {{-- Solo asegúrate de que tenga la clase 'btn-toggle-pw' --}}
+                    <button type="button" class="btn-toggle-pw" id="togglePassword">
+                        <i class="bi bi-eye" id="eyeIcon"></i>
+                    </button>
                 </div>
                 @error('password') <div class="error-text">{{ $message }}</div> @enderror
             </div>
@@ -67,21 +72,3 @@
         </form>
     </div>
 @endsection
-
-@push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const toggle = document.getElementById('togglePassword');
-        const field  = document.getElementById('password');
-        const icon   = document.getElementById('eyeIcon');
-        if (toggle && field && icon) {
-            toggle.addEventListener('click', function () {
-                const isPassword = field.type === 'password';
-                field.type = isPassword ? 'text' : 'password';
-                icon.classList.toggle('bi-eye', !isPassword);
-                icon.classList.toggle('bi-eye-slash', isPassword);
-            });
-        }
-    });
-</script>
-@endpush

@@ -99,7 +99,7 @@
     </div>
 @endsection
 
-{{-- Script para Ver Contraseña --}}
+{{-- Script para Ver Contraseña 
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -117,4 +117,4 @@
         }
     });
 </script>
-@endpush
+@endpush--}}

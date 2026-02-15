@@ -141,7 +141,7 @@
                 {{-- Bloque: Matriz de Adscripción --}}
                 <div class="card border-0 shadow-sm rounded-4">
                     <div class="card-body p-4">
-                        <h6 class="section-title mb-4"><i class="bi bi-diagram-3-fill me-2"></i>Estructura Organizacional</h6>
+                        <h6 class="section-title mb-4"><i class="bi bi-diagram-3-fill me-2"></i>Estructura Organizacional (PEMEX)</h6>
                         
                         <div class="row g-3">
                             {{-- FILA 1: Rol, Régimen, Puesto --}}
@@ -166,7 +166,7 @@
                                 </select>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label small fw-bold">Puesto</label>
+                                <label class="form-label small fw-bold">Puesto Actual</label>
                                 <select name="id_puesto" class="form-select" required>
                                     <option value="">Seleccionar...</option>
                                     @foreach($catalogos['puestos'] as $p) 
@@ -208,7 +208,7 @@
                             <div class="col-12"><hr class="my-1 opacity-10"></div>
 
                             <div class="col-md-4">
-                                <label class="form-label small fw-bold">Región</label>
+                                <label class="form-label small fw-bold">Región Operativa</label>
                                 <select name="id_region" class="form-select" required>
                                     <option value="">Seleccionar...</option>
                                     @foreach($catalogos['regiones'] as $regi) 
@@ -268,26 +268,6 @@
             output.src = reader.result;
         }
         reader.readAsDataURL(event.target.files[0]);
-    }
-
-    // 2. Mostrar/Ocultar contraseña (Ojo)
-    function togglePass(inputId, btn) {
-        const input = document.getElementById(inputId);
-        const icon = btn.querySelector('i');
-        
-        if (input.type === "password") {
-            input.type = "text";
-            icon.classList.remove('bi-eye-slash');
-            icon.classList.add('bi-eye');
-            icon.classList.remove('text-muted');
-            icon.classList.add('text-primary');
-        } else {
-            input.type = "password";
-            icon.classList.remove('bi-eye');
-            icon.classList.add('bi-eye-slash');
-            icon.classList.add('text-muted');
-            icon.classList.remove('text-primary');
-        }
     }
 </script>
 @endsection
